@@ -16,7 +16,7 @@ Just for convenience here's a link to [Google](https://www.google.com)
 
 ## Using Python with R
 
-One of the neat things about markdown is that you can isolate code chunks and have them run perfectly fine right next to each other.
+One of the neat things about markdown is that you can isolate code chunks in R and Python and have them run perfectly fine right next to each other.
 
 For example, here I'll load in the classic iris dataset using R.
 
