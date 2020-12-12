@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Charles Yang</title>
+    <link>/</link>
+    <description>Recent content on Charles Yang</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Tue, 01 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>New Blog Post</title>
+      <link>/post/2020/12/01/new-blog-post/</link>
+      <pubDate>Tue, 01 Dec 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/2020/12/01/new-blog-post/</guid>
+      <description>Howdy y&#39;all, this is my first blog post on my site.
+Here&#39;s a link to my first project.
+Just for convenience here&#39;s a link to Google
+Using Python with R One of the neat things about markdown is that you can isolate code chunks and have them run perfectly fine right next to each other.
+For example, here I&#39;ll load in the classic iris dataset using R.
+library(reticulate) library(tidyverse) ## ── Attaching packages ────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.</description>
+    </item>
+    
+    <item>
+      <title>About</title>
+      <link>/about/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/about/</guid>
+      <description>R Markdown This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see http://rmarkdown.rstudio.com.
+When you click the Knit button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:</description>
+    </item>
+    
+    <item>
+      <title>Project 1</title>
+      <link>/project1/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/project1/</guid>
+      <description>Introduction The coronavirus pandemic has been one of the largest public health crises that the US has faced in recent history. However, the effects of it have not been equally spread out in the population. In order to investigate which groups are more affected, I will be using two datasets. One is from the US Census bureau and includes county population estimates for 2010-2019. These population estimates are further divided up by age, gender, and race/ethnicity.</description>
+    </item>
+    
+    <item>
+      <title>Project 2: Modeling, Testing, and Predicting</title>
+      <link>/project2/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/project2/</guid>
+      <description>Data The dataset I will be using consists of observations collected on 2557 species of palm tree collected from all over the globe, but only 245 of these species have data for all parameters. The data includes details about each species, broken down into a few &amp;quot;groupings&amp;quot;. These are the stems, leaves, and fruit. The stems are described as either erect, climbing, or acaulescent, and measurements of spine branching, height, and diameter are taken.</description>
+    </item>
+    
+    <item>
+      <title>Resume</title>
+      <link>/resume/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/resume/</guid>
+      <description>    </description>
+    </item>
+    
+  </channel>
+</rss>

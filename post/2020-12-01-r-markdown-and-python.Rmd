@@ -1,0 +1,9 @@
+---
+title: R Markdown and Python
+author: Charles Yang
+date: '2020-12-01'
+slug: r-markdown-and-python
+categories: []
+tags: []
+description: ''
+---

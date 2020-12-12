@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Charles Yang" />
+    <meta name="description" content="Describe your website">
+    <link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico">
+    <title>Project 2: Modeling, Testing, and Predicting</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../post/">BLOG</a></li>
+        
+        <li><a href="../projects/">PROJECTS</a></li>
+        
+        <li><a href="../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../project2/">Project 2: Modeling, Testing, and Predicting</a></strong>
+          </h3>
+        </div>
+        
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="data" class="section level2">
+<h2>Data</h2>
+<p>The dataset I will be using consists of observations collected on 2557 species of palm tree collected from all over the globe, but only 245 of these species have data for all parameters. The data includes details about each species, broken down into a few &quot;groupings&quot;. These are the stems, leaves, and fruit. The stems are described as either erect, climbing, or acaulescent, and measurements of spine branching, height, and diameter are taken. The leaves are describe dusing the number of leaves and measurements of length and width. Finally, the fruits are described by their size in all dimensions and color.</p>
+<pre class="r"><code>palmData &lt;- read_csv(&quot;~/content/palmData.csv&quot;)
+data &lt;- palmData %&gt;% select(c(6:26, 29)) %&gt;% na.omit %&gt;% select(c(-UnderstoreyCanopy, -MinFruitLength_cm, -MaxFruitLength_cm, -MinFruitWidth_cm, -MaxFruitWidth_cm))
+head(data)</code></pre>
+<pre><code>## # A tibble: 6 x 17
+## Climbing Acaulescent Erect StemSolitary StemArmed
+LeavesArmed MaxStemHeight_m MaxStemDia_cm
+## &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1 0 0 1 1 0 0 9 9
+## 2 0 0 1 1 1 1 18 50
+## 3 0 0 1 1 0 0 30 30
+## 4 0 0 1 1 0 0 22 30
+## 5 0 0 1 1 0 0 20 30
+## 6 0 0 1 1 0 0 25 45
+## # … with 9 more variables: MaxLeafNumber &lt;dbl&gt;,
+Max_Blade_Length_m &lt;dbl&gt;,
+## # Max_Rachis_Length_m &lt;dbl&gt;, Max_Petiole_length_m &lt;dbl&gt;,
+AverageFruitLength_cm &lt;dbl&gt;,
+## # AverageFruitWidth_cm &lt;dbl&gt;, FruitSizeCategorical
+&lt;chr&gt;, FruitShape &lt;chr&gt;, Conspicuousness &lt;chr&gt;</code></pre>
+</div>
+<div id="manova" class="section level2">
+<h2>MANOVA</h2>
+<div id="manova-test" class="section level3">
+<h3>MANOVA Test</h3>
+<pre class="r"><code>man &lt;- manova(cbind(MaxStemHeight_m, MaxStemDia_cm, MaxLeafNumber, Max_Blade_Length_m, Max_Rachis_Length_m, Max_Petiole_length_m, AverageFruitLength_cm, AverageFruitWidth_cm)~Erect, data = data)
+
+summary(man)</code></pre>
+<pre><code>## Df Pillai approx F num Df den Df Pr(&gt;F)
+## Erect 1 0.13533 4.6759 8 239 2.476e-05 ***
+## Residuals 246
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<p>We reject the null hypothesis and find that one of the numeric variables does differ across levels of stem erect status (p = 2.476e-5).</p>
+</div>
+<div id="univariate-anovas" class="section level3">
+<h3>Univariate ANOVAs</h3>
+<pre class="r"><code>summary.aov(man)</code></pre>
+<pre><code>## Response MaxStemHeight_m :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## Erect 1 21.8 21.789 0.2297 0.6322
+## Residuals 246 23337.5 94.868
+##
+## Response MaxStemDia_cm :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## Erect 1 1456 1455.74 6.0924 0.01426 *
+## Residuals 246 58780 238.94
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Response MaxLeafNumber :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## Erect 1 383.4 383.43 4.597 0.03301 *
+## Residuals 246 20518.7 83.41
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Response Max_Blade_Length_m :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## Erect 1 29.56 29.5602 3.2347 0.07332 .
+## Residuals 246 2248.06 9.1384
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Response Max_Rachis_Length_m :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## Erect 1 15.72 15.7204 2.733 0.09957 .
+## Residuals 246 1415.00 5.7521
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Response Max_Petiole_length_m :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## Erect 1 5.139 5.1392 6.3228 0.01256 *
+## Residuals 246 199.950 0.8128
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Response AverageFruitLength_cm :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## Erect 1 17.15 17.1504 2.7513 0.09845 .
+## Residuals 246 1533.43 6.2335
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Response AverageFruitWidth_cm :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## Erect 1 23.18 23.1797 7.0145 0.008608 **
+## Residuals 246 812.91 3.3045
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<p>The univariate ANOVA tests indicate that the average fruit width, max stem diameter, max petiole length, and max leaf number differ across levels of stem erect status.</p>
+</div>
+<div id="pairwise-t-tests" class="section level3">
+<h3>Pairwise t-tests</h3>
+<pre class="r"><code>pairwise.t.test(data$MaxStemDia_cm, data$Erect, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  data$MaxStemDia_cm and data$Erect 
+## 
+##   0      1     
+## 1 0.0072 -     
+## 2 0.2545 0.9995
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(data$AverageFruitWidth_cm, data$Erect, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  data$AverageFruitWidth_cm and data$Erect 
+## 
+##   0       1      
+## 1 0.73    -      
+## 2 2.6e-07 5.4e-08
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(data$Max_Petiole_length_m, data$Erect, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  data$Max_Petiole_length_m and data$Erect 
+## 
+##   0      1     
+## 1 0.0062 -     
+## 2 0.2474 0.9957
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(data$MaxLeafNumber, data$Erect, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  data$MaxLeafNumber and data$Erect 
+## 
+##   0      1     
+## 1 0.0015 -     
+## 2 0.8241 0.0877
+## 
+## P value adjustment method: none</code></pre>
+<p>So far, I have done 1 MANOVA, 8 univariate ANOVA's, and 12 t-tests. If I were to use p &lt; 0.05 to evaluate significance, there is a 65.94% chance of making a type-I error. Using a bonferroni correction, I will instead be using p &lt; 0.00238 for evaluating significance in the t-tests.</p>
+<p>Thus the average of average fruit width for species with erect stems differs from that of species that can have either type of stem (p = 5.4e-8). In addition, the average of average fruit width for species without erect stems also differs from species that can have either type of stem (p = 2.6e-7). The last significant difference was for max leaf number between species that have erect stems and those that do not (p = 0.0015).</p>
+</div>
+<div id="assumption-testing" class="section level3">
+<h3>Assumption Testing</h3>
+<pre class="r"><code>library(rstatix)
+
+group &lt;- data$Erect[data$Erect != 2]
+DVs &lt;- data %&gt;% filter(Erect != 2) %&gt;% select(c(7:14))
+head(data)</code></pre>
+<pre><code>## # A tibble: 6 x 17
+## Climbing Acaulescent Erect StemSolitary StemArmed
+LeavesArmed MaxStemHeight_m MaxStemDia_cm
+## &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1 0 0 1 1 0 0 9 9
+## 2 0 0 1 1 1 1 18 50
+## 3 0 0 1 1 0 0 30 30
+## 4 0 0 1 1 0 0 22 30
+## 5 0 0 1 1 0 0 20 30
+## 6 0 0 1 1 0 0 25 45
+## # … with 9 more variables: MaxLeafNumber &lt;dbl&gt;,
+Max_Blade_Length_m &lt;dbl&gt;,
+## # Max_Rachis_Length_m &lt;dbl&gt;, Max_Petiole_length_m &lt;dbl&gt;,
+AverageFruitLength_cm &lt;dbl&gt;,
+## # AverageFruitWidth_cm &lt;dbl&gt;, FruitSizeCategorical
+&lt;chr&gt;, FruitShape &lt;chr&gt;, Conspicuousness &lt;chr&gt;</code></pre>
+<pre class="r"><code>#Shapiro-Wilk test for multivariate normality
+sapply(split(DVs,group), mshapiro_test)</code></pre>
+<pre><code>##           0          1           
+## statistic 0.5046329  0.7058936   
+## p.value   3.8342e-06 7.520122e-20</code></pre>
+<pre class="r"><code>#Box&#39;s M test (null: assumption met)
+box_m(DVs, group)</code></pre>
+<pre><code>## # A tibble: 1 x 4
+## statistic p.value parameter method
+## &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;
+## 1 146. 3.12e-15 36 Box&#39;s M-test for Homogeneity of
+Covariance Matrices</code></pre>
+<p>We reject the null hypothesis and find that the data do not exhibit multivariate normality (p &lt; 0.05). We reject the null hypothesis and find that the covariance matrices are not homogenous (p &lt; 0.05).</p>
+</div>
+<div id="randomization-test" class="section level3">
+<h3>Randomization Test</h3>
+<p>Here I test the difference in means of the Average Fruit Width based on if the species has an erect stem or not.</p>
+<pre class="r"><code>random &lt;- data.frame(Erect = data$Erect, AverageFruitWidth = data$AverageFruitWidth_cm) %&gt;% filter(Erect == 0 | Erect == 1)
+
+true_mean &lt;- random %&gt;% group_by(Erect) %&gt;% summarize_all(mean) %&gt;% pull %&gt;% diff #true mean differences
+true_mean</code></pre>
+<pre><code>## [1] 0.1590325</code></pre>
+<pre class="r"><code>set.seed(1)
+mean_diff &lt;- NULL
+for(i in 1:5000){
+  samp &lt;- data.frame(erect = sample(random$Erect), FruitWidth = random$AverageFruitWidth)
+  mean_diff[i] &lt;- mean(samp[samp$erect == 1,]$FruitWidth) - mean(samp[samp$erect == 0,]$FruitWidth)
+}
+
+mean(mean_diff &gt; 0.1590325 | mean_diff &lt; -0.1590325) # p-value</code></pre>
+<pre><code>## [1] 0.7034</code></pre>
+<pre class="r"><code>data.frame(diffs = mean_diff) %&gt;% ggplot(aes(x = diffs)) + geom_histogram() + geom_vline(xintercept = c(true_mean, -true_mean), color = &quot;red&quot;)</code></pre>
+<p><img src="../project2_files/figure-html/unnamed-chunk-6-1.png" width="768" style="display: block; margin: auto;" /> H0: The mean average fruit width does not differ between species with erect stems and species without erect stems.<br />
+H1: The mean average fruit width does differ between species with erect stems and species without erect stems.</p>
+<p>We fail to reject the null hypothesis and conclude that there is no difference in the mean average fruit width between species that have erect stems and those that do not (p = 0.7034).</p>
+</div>
+</div>
+<div id="linear-regression-model" class="section level2">
+<h2>Linear Regression Model</h2>
+<p>Here I see if there is a correlation between leaf blade length and stem height with the volume of the fruit.</p>
+<pre class="r"><code>data &lt;- data %&gt;% mutate(FruitVolume = 4 / 3 * pi * AverageFruitLength_cm * AverageFruitWidth_cm^2, MaxBladeLength_c = Max_Blade_Length_m - mean(Max_Blade_Length_m), MaxStemHeight_c = MaxStemHeight_m - mean(MaxStemHeight_m))
+
+lm &lt;- lm(FruitVolume ~ MaxBladeLength_c * MaxStemHeight_c, data = data)
+summary(lm)</code></pre>
+<pre><code>##
+## Call:
+## lm(formula = FruitVolume ~ MaxBladeLength_c *
+MaxStemHeight_c,
+## data = data)
+##
+## Residuals:
+## Min 1Q Median 3Q Max
+## -1505.4 -299.2 -75.9 41.0 17309.1
+##
+## Coefficients:
+## Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept) 230.582 101.271 2.277 0.0237 *
+## MaxBladeLength_c 80.357 35.373 2.272 0.0240 *
+## MaxStemHeight_c 14.097 10.385 1.358 0.1759
+## MaxBladeLength_c:MaxStemHeight_c 1.726 3.635 0.475
+0.6354
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Residual standard error: 1459 on 244 degrees of freedom
+## Multiple R-squared: 0.05165, Adjusted R-squared: 0.03999
+## F-statistic: 4.43 on 3 and 244 DF, p-value: 0.00471</code></pre>
+<p>For palm species with average leaf blade length and stem height, the average volume of the fruit is 230.582 cm^3. For every one meter increase in leaf blade length, there is a predicted increase in fruit volume by 80.357 cm^3. For every one meter increase in stem height, there is a predicted increase in fruit volume by 14.097 cm^3. For every one meter increase in leaf blade length, the slope of stem height on fruit volume increases by 1.726 cm^3/m.</p>
+<div id="linear-regression-plots" class="section level3">
+<h3>Linear Regression Plots</h3>
+<pre class="r"><code>library(interactions)
+interact_plot(lm, pred = MaxStemHeight_c, modx = MaxBladeLength_c, plot.points = TRUE)</code></pre>
+<p><img src="../project2_files/figure-html/unnamed-chunk-8-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+<div id="assumption-testing-1" class="section level3">
+<h3>Assumption Testing</h3>
+<pre class="r"><code>#Linearity
+ggplot(data, aes(MaxStemHeight_c, FruitVolume)) + geom_point()</code></pre>
+<p><img src="../project2_files/figure-html/unnamed-chunk-9-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data, aes(MaxBladeLength_c, FruitVolume)) + geom_point()</code></pre>
+<p><img src="../project2_files/figure-html/unnamed-chunk-9-2.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#homoskedasticity
+fitted &lt;- lm$fitted.values
+resids &lt;- lm$residuals
+ggplot() + geom_point(aes(fitted, resids)) + geom_hline(yintercept = 0, color = &quot;red&quot;)</code></pre>
+<p><img src="../project2_files/figure-html/unnamed-chunk-9-3.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#normality
+ggplot() + geom_qq(aes(sample = resids)) + geom_qq_line(aes(sample = resids))</code></pre>
+<p><img src="../project2_files/figure-html/unnamed-chunk-9-4.png" width="768" style="display: block; margin: auto;" /> Analyzing the graphs seems to indicate that the model violates all assumptions. The variables are not linearly correlated, the residual plot shows that larger fitted values have larger residuals than earlier fitted values. Finally, the tails of the qq-plot indicate a deviation from normality. In general, it seems that outliers are having a significant influence on the model.</p>
+</div>
+<div id="test-with-robust-se" class="section level3">
+<h3>Test with Robust SE</h3>
+<pre class="r"><code>library(lmtest); library(sandwich)
+coeftest(lm, vcov = vcovHC(lm))</code></pre>
+<pre><code>##
+## t test of coefficients:
+##
+## Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept) 230.5822 154.4504 1.4929 0.1367
+## MaxBladeLength_c 80.3566 75.7704 1.0605 0.2900
+## MaxStemHeight_c 14.0974 25.2111 0.5592 0.5766
+## MaxBladeLength_c:MaxStemHeight_c 1.7256 13.6413 0.1265
+0.8994</code></pre>
+<pre class="r"><code>summary(lm)$adj.r.squared</code></pre>
+<pre><code>## [1] 0.03999046</code></pre>
+<p>After using robust standard errors, the effect of leaf blade length is no longer significant. According to the adjusted R squared, the only 3.999% of the variation in fruit volume is explained by leaf length and stem height.</p>
+</div>
+<div id="bootstrap-se" class="section level3">
+<h3>Bootstrap SE</h3>
+<pre class="r"><code>set.seed(1)
+samp_dist &lt;- replicate(5000, {
+  boot_dat &lt;- data %&gt;% sample_frac(replace = T)
+  fit &lt;- lm(FruitVolume ~ MaxBladeLength_c * MaxStemHeight_c, data = boot_dat)
+  coef(fit)
+})
+#bootstrap SE
+samp_dist %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)</code></pre>
+<pre><code>## (Intercept) MaxBladeLength_c MaxStemHeight_c
+MaxBladeLength_c:MaxStemHeight_c
+## 1 151.4522 75.78961 23.39218 13.63654</code></pre>
+<pre class="r"><code>#95% CI of slope estimates
+samp_dist %&gt;% t %&gt;% as.data.frame %&gt;% pivot_longer(1:4) %&gt;% group_by(name) %&gt;% summarize(lower = quantile(value, 0.025), upper = quantile(value, 0.975))</code></pre>
+<pre><code>## # A tibble: 4 x 3
+##   name                             lower upper
+##   &lt;chr&gt;                            &lt;dbl&gt; &lt;dbl&gt;
+## 1 (Intercept)                      -66.6 538. 
+## 2 MaxBladeLength_c                 -46.1 251. 
+## 3 MaxBladeLength_c:MaxStemHeight_c -22.8  32.4
+## 4 MaxStemHeight_c                  -29.3  62.4</code></pre>
+<p>Compared to using robust SEs, the bootstrap SEs for the intercept and coefficient for leaf blade length are smaller, but the SEs for the other coefficients are higher. This pattern is the same for the original regression. Since the 95% confidence intervals for the coefficient estimates all include 0, we can conclude that they are indistinguishable from 0. Therefore the p-values are similar to when we used the robust SEs but not to the original model.</p>
+</div>
+</div>
+<div id="logistic-regressions" class="section level2">
+<h2>Logistic Regressions</h2>
+<div id="using-2-predictors" class="section level3">
+<h3>Using 2 Predictors</h3>
+<pre class="r"><code>log_fit &lt;- glm(LeavesArmed ~ Max_Blade_Length_m + Max_Petiole_length_m, data = data, family = &quot;binomial&quot;)
+summary(log_fit)</code></pre>
+<pre><code>##
+## Call:
+## glm(formula = LeavesArmed ~ Max_Blade_Length_m +
+Max_Petiole_length_m,
+## family = &quot;binomial&quot;, data = data)
+##
+## Deviance Residuals:
+## Min 1Q Median 3Q Max
+## -1.8588 -0.5942 -0.5291 -0.4865 2.1109
+##
+## Coefficients:
+## Estimate Std. Error z value Pr(&gt;|z|)
+## (Intercept) -2.06606 0.26927 -7.673 1.68e-14 ***
+## Max_Blade_Length_m -0.03583 0.06598 -0.543 0.58706
+## Max_Petiole_length_m 0.61265 0.21845 2.805 0.00504 **
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## (Dispersion parameter for binomial family taken to be 1)
+##
+## Null deviance: 228.76 on 247 degrees of freedom
+## Residual deviance: 217.93 on 245 degrees of freedom
+## AIC: 223.93
+##
+## Number of Fisher Scoring iterations: 4</code></pre>
+<p>For palm species with 0 meter long leaves and petioles (the stalk of the leaf), the log-odds of the leaves having spines is -2.06606. For every increase in leaf blade length by 1 meter, the log-odds of the leaves having spines decrease by 0.03583 For every 1 meter increase in the petiole length, the log-odds of the leaves having spines increases by 0.61265.</p>
+<div id="confusion-matrix-and-related-values" class="section level4">
+<h4>Confusion Matrix and Related Values</h4>
+<pre class="r"><code>predicted &lt;- predict(log_fit, type = &quot;response&quot;)
+table(truth = data$LeavesArmed, pred = predicted &gt; 0.5) %&gt;% addmargins</code></pre>
+<pre><code>##      pred
+## truth FALSE TRUE Sum
+##   0     203    2 205
+##   1      42    1  43
+##   Sum   245    3 248</code></pre>
+<pre class="r"><code>class_diag(predicted, data$LeavesArmed)</code></pre>
+<pre><code>##         acc       sens      spec       ppv       auc
+## 1 0.8225806 0.02325581 0.9902439 0.3333333 0.6683494</code></pre>
+<p>The model diagnostic values are as follows:<br />
+Accuracy: 0.823<br />
+Sensitivity: 0.023<br />
+Specificity: 0.990<br />
+Precision: 0.333<br />
+AUC: 0.668<br />
+From this we can tell that the model does a good job of predicting negatives, but struggles with predicting positives. The AUC indicates that a species with spined leaves has 66.835% chance of having a higher predicted probability than a randomly selected species without spined leaves.</p>
+</div>
+<div id="density-plot" class="section level4">
+<h4>Density Plot</h4>
+<pre class="r"><code>logit &lt;- predict(log_fit)
+density &lt;- cbind(logit = logit, LeavesArmed = data$LeavesArmed) %&gt;% as.data.frame %&gt;%
+  mutate(LeavesArmed = ifelse(LeavesArmed == 1, &quot;Spined&quot;, &quot;No Spines&quot;))
+
+ggplot(density, aes(logit, fill = LeavesArmed)) + geom_density(alpha = 0.3) +
+  geom_vline(xintercept = 0)</code></pre>
+<p><img src="../project2_files/figure-html/unnamed-chunk-14-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+<div id="roc-plot" class="section level4">
+<h4>ROC Plot</h4>
+<pre class="r"><code>library(plotROC)
+roc_data &lt;- cbind(LeavesArmed = data$LeavesArmed, probs = predict(log_fit, type = &quot;response&quot;)) %&gt;%
+  as.data.frame
+
+ROC &lt;- ggplot(roc_data) + geom_roc(aes(d = LeavesArmed, m = probs), n.cuts = 0)
+ROC</code></pre>
+<p><img src="../project2_files/figure-html/unnamed-chunk-15-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>calc_auc(ROC)</code></pre>
+<pre><code>##   PANEL group       AUC
+## 1     1    -1 0.6683494</code></pre>
+<p>The AUC indicates that a species with spined leaves has 68.021% chance of having a higher predicted probability than a randomly selected species without spined leaves.</p>
+</div>
+</div>
+<div id="using-all-predictors" class="section level3">
+<h3>Using all Predictors</h3>
+<pre class="r"><code>log_fit_all &lt;- glm(LeavesArmed ~ ., data = data, family = &quot;binomial&quot;)
+predict_all &lt;- predict(log_fit_all, type = &quot;response&quot;)
+class_diag(predict_all, data$LeavesArmed)</code></pre>
+<pre><code>##         acc      sens      spec       ppv       auc
+## 1 0.9395161 0.7209302 0.9853659 0.9117647 0.9266024</code></pre>
+<p>After fitting using all variables, the model diagnostics were as follows:<br />
+Accuracy: 0.940<br />
+Sensitivity: 0.721<br />
+Specificity: 0.985<br />
+Precision: 0.912<br />
+AUC: 0.927<br />
+High values for accuracy, specificity, and precision indicate that the model is overall decent at predicting the true values, predicting negative values, and few predicted positives are false positives. The model does the worst in predicting negatives. Based on the AUC, there is a 92.660% chance that a species with spined leaves has a higher predicted probability of having spined leaves than a randomly selected species without spined leaves.</p>
+<div id="fold-cross-validation" class="section level4">
+<h4>10-fold Cross-Validation</h4>
+<pre class="r"><code>set.seed(1)
+k = 10
+
+cv_data &lt;- data[sample(nrow(data)),]
+folds &lt;- cut(seq(1:nrow(data)), breaks = k, labels = F)
+
+diags &lt;- NULL
+for (i in 1:k){
+  #make datasets
+  train &lt;- cv_data[folds != i,]
+  test &lt;- cv_data[folds == i,]
+  truth &lt;- test$LeavesArmed
+  
+  #train
+  cv_fit &lt;- glm(LeavesArmed ~ ., data = train, family = &quot;binomial&quot;)
+  
+  #test on test set
+  prob &lt;- predict(cv_fit, newdata = test, type = &quot;response&quot;)
+  diags &lt;- rbind(diags, class_diag(prob, truth))
+}
+summarize_all(diags, mean)</code></pre>
+<pre><code>##     acc      sens     spec       ppv       auc
+## 1 0.907 0.6314286 0.965602 0.8166667 0.8498361</code></pre>
+<p>After using 10-fold cross validation, the average diagnostics were as follows:<br />
+Accuracy: 0.907<br />
+Sensitivity: 0.631<br />
+Specificity: 0.966<br />
+Precision: 0.817<br />
+AUC: 0.850<br />
+The AUC indicates that 84.984% of species with spined leaves have a higher predicted probability of having spines than a randomly selected species without spined leaves. The AUC after cross-validation is lower than the in-sample AUC.</p>
+</div>
+<div id="lasso" class="section level4">
+<h4>LASSO</h4>
+<pre class="r"><code>library(glmnet)
+set.seed(1)
+
+pred_mat &lt;- model.matrix(LeavesArmed ~ ., data = data)[,-1]
+resp_mat &lt;- as.matrix(data$LeavesArmed)
+
+cv_lasso &lt;- cv.glmnet(x = pred_mat, y = resp_mat, family = &quot;binomial&quot;)
+lasso &lt;- glmnet(x = pred_mat, y = resp_mat, family = &quot;binomial&quot;, lambda = cv_lasso$lambda.1se)
+coef(lasso)</code></pre>
+<pre><code>## 23 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                                   s0
+## (Intercept)               -2.4782998
+## Climbing                   1.8326186
+## Acaulescent                .        
+## Erect                      .        
+## StemSolitary               .        
+## StemArmed                  2.6372388
+## MaxStemHeight_m            .        
+## MaxStemDia_cm              .        
+## MaxLeafNumber              0.0303954
+## Max_Blade_Length_m         .        
+## Max_Rachis_Length_m        .        
+## Max_Petiole_length_m       .        
+## AverageFruitLength_cm      .        
+## AverageFruitWidth_cm       .        
+## FruitSizeCategoricalsmall  .        
+## FruitShapeelongate         .        
+## FruitShapeglobose          .        
+## FruitShapeovoid            .        
+## FruitShapepyramidal        .        
+## Conspicuousnesscryptic     .        
+## FruitVolume                .        
+## MaxBladeLength_c           .        
+## MaxStemHeight_c            .</code></pre>
+<p>After using LASSO regression, only whether a species is climbing or not, whether the stem has spines, and the leaf number were retained.</p>
+</div>
+<div id="fold-cv-with-lasso-variables" class="section level4">
+<h4>10-fold CV with LASSO Variables</h4>
+<pre class="r"><code>set.seed(1)
+k = 10
+
+cv_data &lt;- data[sample(nrow(data)),]
+folds &lt;- cut(seq(1:nrow(data)), breaks = k, labels = F)
+
+diags &lt;- NULL
+for (i in 1:k){
+  #make datasets
+  train &lt;- cv_data[folds != i,]
+  test &lt;- cv_data[folds == i,]
+  truth &lt;- test$LeavesArmed
+  
+  #train
+  cv_fit &lt;- glm(LeavesArmed ~ Climbing + StemArmed + MaxLeafNumber, data = train, family = &quot;binomial&quot;)
+  
+  #test on test set
+  prob &lt;- predict(cv_fit, newdata = test, type = &quot;response&quot;)
+  diags &lt;- rbind(diags, class_diag(prob, truth))
+}
+summarize_all(diags, mean)</code></pre>
+<pre><code>##         acc      sens     spec       ppv       auc
+## 1 0.9231667 0.6471429 0.985213 0.9166667 0.8897661</code></pre>
+<p>After using 10-fold cross validation using variables selected by LASSO, the average diagnostics were as follows:<br />
+Accuracy: 0.923<br />
+Sensitivity: 0.647<br />
+Specificity: 0.985<br />
+Precision: 0.917<br />
+AUC: 0.890<br />
+The AUC this time was higher than when doing a 10-fold cross-validation with all predictor variables, but is still lower than the in-sample AUC.</p>
+</div>
+</div>
+</div>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../js/docs.min.js"></script>
+<script src="../js/main.js"></script>
+
+<script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

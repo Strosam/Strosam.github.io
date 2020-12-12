@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Charles Yang" />
+    <meta name="description" content="Describe your website">
+    <link rel="shortcut icon" type="image/x-icon" href="../../../../../img/favicon.ico">
+    <title>New Blog Post</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../../../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../../../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../../../../post/">BLOG</a></li>
+        
+        <li><a href="../../../../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../../../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../../../../post/2020/12/01/new-blog-post/">New Blog Post</a></strong>
+          </h3>
+        </div>
+        
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<p>Howdy y'all, this is my first blog post on my site.</p>
+<p>Here's a <a href="../../../../../project1/">link</a> to my first project.</p>
+<p>Just for convenience here's a link to <a href="https://www.google.com">Google</a></p>
+<div id="using-python-with-r" class="section level2">
+<h2>Using Python with R</h2>
+<p>One of the neat things about markdown is that you can isolate code chunks and have them run perfectly fine right next to each other.</p>
+<p>For example, here I'll load in the classic iris dataset using R.</p>
+<pre class="r"><code>library(reticulate)
+library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──</code></pre>
+<pre><code>## ✓ ggplot2 3.3.2     ✓ purrr   0.3.4
+## ✓ tibble  3.0.3     ✓ dplyr   1.0.1
+## ✓ tidyr   1.1.1     ✓ stringr 1.4.0
+## ✓ readr   1.3.1     ✓ forcats 0.5.0</code></pre>
+<pre><code>## ── Conflicts ───────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>iris &lt;- iris
+head(iris)</code></pre>
+<pre><code>##   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
+## 1          5.1         3.5          1.4         0.2  setosa
+## 2          4.9         3.0          1.4         0.2  setosa
+## 3          4.7         3.2          1.3         0.2  setosa
+## 4          4.6         3.1          1.5         0.2  setosa
+## 5          5.0         3.6          1.4         0.2  setosa
+## 6          5.4         3.9          1.7         0.4  setosa</code></pre>
+<p>One of the coolest parts of this is that the R and python environments can talk to one another. For example, here we can use the imported iris dataset from above and use it in a python environment with ease.</p>
+<pre class="python"><code>import pandas as pd
+import numpy as np
+r.iris.head()
+
+#We can also manipulate the dataset thanks to pandas</code></pre>
+<pre><code>##    Sepal.Length  Sepal.Width  Petal.Length  Petal.Width Species
+## 0           5.1          3.5           1.4          0.2  setosa
+## 1           4.9          3.0           1.4          0.2  setosa
+## 2           4.7          3.2           1.3          0.2  setosa
+## 3           4.6          3.1           1.5          0.2  setosa
+## 4           5.0          3.6           1.4          0.2  setosa</code></pre>
+<pre class="python"><code>print(np.mean(r.iris[&quot;Sepal.Length&quot;]))
+
+#python lets us treat the dataframe like an array and index using indices</code></pre>
+<pre><code>## 5.84333333333</code></pre>
+<pre class="python"><code>r.iris.loc[0:5,&quot;Sepal.Length&quot;:&quot;Petal.Length&quot;] </code></pre>
+<pre><code>##    Sepal.Length  Sepal.Width  Petal.Length
+## 0           5.1          3.5           1.4
+## 1           4.9          3.0           1.4
+## 2           4.7          3.2           1.3
+## 3           4.6          3.1           1.5
+## 4           5.0          3.6           1.4
+## 5           5.4          3.9           1.7</code></pre>
+<p>While there are certainly cases to use one language over the other, it's not like the two languages can't do similar things. Take for example plotting:</p>
+<p>In R, ggplot can handle a lot of plotting needs.</p>
+<pre class="r"><code>library(ggplot2)
+
+iris %&gt;% ggplot(aes(x = Sepal.Length, y = Petal.Length)) + 
+  geom_point(color = &quot;red&quot;, alpha = 0.5) + 
+  labs(title = &quot;Example Plot&quot;, x = &quot;Sepal Length&quot;, y = &quot;Petal Length&quot;)</code></pre>
+<p><img src="../../../../../post/2020-12-01-_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>In python, matplotlib can do similar plots. Unfortunately I couldn't figure out why RStudio couldn't properly render the below python code but I promise that it can work on your computer if you copy the code.</p>
+<p>{python} import matplotlib.pyplot as plt plt.scatter(r.iris[&quot;Sepal.Length&quot;], r.iris[&quot;Petal.Length&quot;], color = &quot;red&quot;, alpha = 0.5) plt.xlabel(&quot;Sepal Length&quot;) plt.ylabel(&quot;Petal Length&quot;) plt.title(&quot;Example Plot 2: Electric Boogaloo&quot;)</p>
+<p>At last, I leave you with this image. I hope it may haunt you as it haunts me.</p>
+<div class="figure">
+<img src="../../../../../post/2020-12-01-_files/bad%20meme.png" />
+
+</div>
+</div>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../../../../js/docs.min.js"></script>
+<script src="../../../../../js/main.js"></script>
+
+<script src="../../../../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

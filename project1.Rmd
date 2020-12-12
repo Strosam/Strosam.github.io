@@ -1,0 +1,135 @@
+---
+title: "Project 1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F,
+tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
+```
+## Introduction
+
+  The coronavirus pandemic has been one of the largest public health crises that the US has faced in recent history. However, the effects of it have not been equally spread out in the population. In order to investigate which groups are more affected, I will be using two datasets. One is from the US Census bureau and includes county population estimates for 2010-2019. These population estimates are further divided up by age, gender, and race/ethnicity. These estimates are calculated using birth, death, and migration numbers from each county and adding these numbers to the populations from the 2010 Census.The second dataset is a time series cumulative total number of confirmed coronavirus cases from January 22, 2020 to October 5, 2020 organized by USA Facts. The data is collected from county or state public health agencies. Being able to understand how demographics relate to infection rates could be informative about issues in how the US deals with public health. Previously released research indicates that certain groups, such as African-Americans and Hispanics, have higher infection rates than other groups. I would expect to see a similar pattern in the data. I don't expect there to be much of a relationship between gender and infection rate however.
+  
+  The USA Facts dataset includes county name and state name, with respective FIPS codes for each, as well as date entries from 1/22/20 to 10/5/20 with the cumulative confirmed case count as the value. The Census dataset similarly includes county and state names with corresponding FIPS codes. It also includes variables for year, which refers to the date the population estimates are for, age group, and the population estimates. The population estimates include total population, male and female population, and population estimates for all races and ethnicities considered by the Census Bureau in various combinations. These are also partially divided by marital status, whether someone is alone or is in a combination.
+
+## Tidying
+```{r}
+library(tidyverse); library(openintro)
+county_case_cum <- read_csv("~/content/countyData.csv")
+#county_case_cum <- county_covid %>% pivot_longer(-(1:4), names_to = "date", values_to = "case_num") %>% rename(County.Name = `County Name`) %>% unite(col = "county_state", c(County.Name, State), remove = F) %>% group_by(county_state) %>% summarize(cum.case.num = max(case_num, na.rm = T))
+glimpse(county_case_cum)
+
+state_abbr <- read_csv("~/content/stateEstimates.csv")
+#state_abbr <- county_demo %>% filter(YEAR == 12, AGEGRP == 0) %>% select(-(1:3)) %>% mutate(STNAME = state2abbr(.[[1]])) %>% unite(col = "county_state", c(CTYNAME, STNAME), remove = F)
+head(state_abbr)
+```
+
+  The first dataset started with cumulative case counts per day in US counties. I used pivot_longer in order to compress the data into a date column and a cumulative case column. I also appended the abbreviations for the state onto each county entry because there are duplicate counties in different states. To collapse the data I grouped by county+state and selected the row with the highest case number as it is the most recent data. Only the county+state and cumulative case number data were preserved.
+
+  The second dataset was a similar story. I only selected data where the year value was 12 and age group was 0 as this represented the total population estimates when the most recent estimate was generated. As with before, a variable for county+state names was created. The numeric identifiers were dropped. Since select was used the rest of the columns were preserved.
+
+
+
+## Joining
+```{r}
+joined_data <- state_abbr %>% inner_join(county_case_cum)
+#setdiff(union(county_case_cum$county_state, state_abbr$county_state), intersect(state_abbr$county_state, county_case_cum$county_state)) %>% length
+#setdiff(state_abbr$county_state, county_case_cum$county_state)
+head(joined_data)
+```
+
+  An inner join was used because both datasets included entries not found in the other. The cumulative case number dataset dropped cities, unallocated areas of each state, and a few counties. The census data lost mostly independent city entries, but also a few boroughs. One notable entry lost was Washington D.C. due to inconsistent naming of the "county" by the datasets. Almost half of the 105 dropped entries were from the aforementioned unallocated areas. All of the omissions are important, however, as this means that any conclusions drawn from this joined dataset may not be fully representative of the entire United States.
+
+## Wrangling
+```{r}
+county_data <- joined_data %>% select(CTYNAME, STNAME, cum.case.num, AGEGRP, matches("\\b.{1}AC_|\\bH_|\\bTOT_"))
+prop_data <- county_data %>% mutate_at(vars(TOT_MALE:H_FEMALE), ~./TOT_POP)
+demo_final <- prop_data %>% mutate(white = WAC_FEMALE + WAC_MALE) %>% 
+  mutate(african.american = BAC_FEMALE + BAC_MALE) %>% 
+  mutate(native.american.alaskan = IAC_MALE + IAC_FEMALE) %>% 
+  mutate(asian = AAC_FEMALE + AAC_MALE) %>% 
+  mutate(hawaiian.pacific.islander = NAC_FEMALE + NAC_MALE) %>% 
+  mutate(hispanic = H_MALE + H_FEMALE) %>% 
+  select(!matches("_")|matches("\\bTOT"), -AGEGRP) %>% 
+  rename(tot.pop = TOT_POP, tot.male = TOT_MALE, tot.female = TOT_FEMALE) %>% 
+  mutate(cases.per.capita = cum.case.num/tot.pop) %>% na.omit
+head(demo_final)
+```
+
+  In order to make the interpretations easier, I collapsed the race/ethnicity population estimates so that I had the total population of each race/ethnicity, regardless of marital status and gender. Then I converted all population values into proportions of the total county population so comparison would be possible. Case numbers were converted to cases per capita for ease of comparison.
+
+```{r}
+demo_final %>% summarize_if(is.numeric, c(mean = mean, sd = sd, min = min, max = max)) %>% pivot_longer(cols = 1:44) %>% separate(name, sep = "_", into = c("variable", "summary.stat")) %>% pivot_wider(names_from = summary.stat, values_from = value) %>% arrange(min)
+```
+
+  Based on the standard deviations, it appears that there is significant variance in the populations of counties. For example, the mean proportion of African Americans in a population is 0.101, and the standard deviation is 0.145. This can also be seen in the total population data.The mean population of a county was 103,779.2 people, with a standard deviation of 334,221.9 people. This suggests that there are numerous counties at extremes of populations. This can be seen from the minimum and maximum values for the population, which range from 86 to 10,039,110
+
+```{r}
+demo_final %>% group_by(STNAME) %>% summarize_if(is.numeric, c(mean = mean, sd = sd, min = min, max = max)) %>% pivot_longer(2:45) %>% separate(name, into = c("variable", "stat"), sep = "_") %>% pivot_wider(names_from = stat, values_from = value) %>% arrange(variable, -max) -> categ_tables
+
+categ_tables %>% filter(STNAME == "HI")
+categ_tables %>% filter(STNAME == "CA")
+```
+
+  Here I computed similar statistics as earlier but this time grouped by the state. I chose to show Hawaii and California since they had the lowest population county and highest population county respectively. California had higher average cases per capita than Hawaii but also had more variance in the data. California on average has more men than women, while Hawaii is the opposite. California on average has higher proportions of African Americans, Native Americans/Alaskans, and Whites than Hawaii, while Hawaii has greater proportions on average of other races/ethnicities.
+
+```{r}
+demo_add_gender <- demo_final %>% mutate(major.gender = case_when(tot.male > tot.female ~ "male", tot.female > tot.male ~ "female", TRUE ~ "equal"))
+demo_add_gender %>% group_by(STNAME, major.gender) %>% summarize_at(vars(cases.per.capita), c(mean.cases = mean, sd.cases = sd, var.cases = var)) %>% arrange(desc(major.gender), -mean.cases) %>% head
+```
+
+  In the counties that were majority male, the highest values for cases per capita were roughly 0.05. In contrast, counties that were majority female had maximum cases per capita of only around 0.036. However, there was more variance in the majority male counties at the top compared to the majority female counties at the top. 
+
+
+```{r}
+demo_final %>% select(is.numeric) %>% cor -> cor.table
+knitr::kable(cor.table)
+```
+
+  The correlation matrix indicates that there is a unsurprisingly a relatively strong correlation between total population and cumulative case numbers, which makes sense since more people means more chances of transmitting the virus. In addition, there was a strong negative correlation between proportion white and proportion African American. There was a weak positive correlation between the proportion of the population that was African American and the cases per capita and between the proportion of the population that is Asian with the proportion of the population that is Hawaiian/Pacific Islander. There is also a weak negative correlation between the proportion of the population that is white and the cases per capita. There was little correlation between other variables.
+
+## Plotting
+```{r}
+cor.table %>% as.data.frame %>% rownames_to_column("var1") %>% pivot_longer(-1, names_to = "var2", values_to = "cor") -> cor.df
+cor.df %>% ggplot(aes(x = var1, y = var2, fill = cor)) + geom_tile() + scale_fill_gradient2(low = "red", mid = "orange", high = "yellow", midpoint = 0) + geom_text(aes(label=round(cor,2)),color = "black", size = 2) + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.4)) + coord_fixed()
+```
+```{r}
+demo_add_gender %>% ggplot(aes(y = cases.per.capita, x = african.american)) + geom_point(aes(color = major.gender)) + labs(y = "Cases per Capita", x = "African American Proportion of Population") + ggtitle("Cases per Capita in US Counties vs. African American Proportion of Population") + scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+  There appears to be a weak positive correlation between the proportion of the county's population that is African American and the cases per capita in the county for counties that were majority female. For counties that were majority male, there appeared to be a few extreme cases with lower African American proportions with high cases per capita. It should also be noted tha the majority of the data points are found with African American proportions of the population less than 0.2.
+```{r}
+demo_add_gender %>% ggplot(aes(x = major.gender, y = cases.per.capita)) + geom_bar(stat = "summary", fun = mean, fill = "pink") + geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.5) + labs(x = "Majority Gender in County", y = "Cases per Capita") + ggtitle("Cases per Capita vs. Majority Gender of County")
+```
+
+  It does not appear that there is a significant difference in cases per capita between counties that were majority female and majority male. The majority female counties had slightly less variation in their cases per capita than their male counterparts but this did not alter the conclusions. 
+
+## Dimensionality Reduction  
+```{r}
+library(cluster)
+head(demo_final)
+pam_cluster<- demo_final %>% select(is.numeric) %>% select(c(-cum.case.num, -tot.pop)) %>% scale
+head(pam_cluster)
+sw <- vector()
+for(i in 2:10){
+  pam_fit <- pam(pam_cluster, k = i)  
+  sw[i] <- pam_fit$silinfo$avg.width
+}
+ggplot()+geom_line(aes(x=1:10,y=sw))+scale_x_continuous(name="k",breaks=1:10)
+
+```
+```{r}
+pam_k2 <- pam(pam_cluster, k = 3)
+head(pam_cluster)
+demo_final %>% mutate(cluster = as.factor(pam_k2$clustering)) -> cluster_final
+library(GGally)
+ggpairs(cluster_final, columns = c(3:4, 9, 11, 13), aes(color = cluster))
+plot(pam_k2, which = 2)
+```
+
+  Based on the average silhouette width, I used 3 clusters for PAM and used all numeric variables I had transformed into proportions earlier. The average silhouette width was really low, however, at only 0.36. This suggests that there is a weak structure in the clustering that could be artificial. This becomes a little more obvious when one looks at the pairwise plots with the clusters colored in. None of the variables I chose to visualize were able to separate out the clusters. These variables were the ones that I found in the correlation heatmap to potentially show differences between the counties and I didn't use all numeric variables as that would have made the graph unreadable. 
+
+
+
+

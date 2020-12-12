@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Charles Yang</title>
+    <link>/post/</link>
+    <description>Recent content in Posts on Charles Yang</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Tue, 01 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>New Blog Post</title>
+      <link>/post/2020/12/01/new-blog-post/</link>
+      <pubDate>Tue, 01 Dec 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/2020/12/01/new-blog-post/</guid>
+      <description>Howdy y&#39;all, this is my first blog post on my site.
+Here&#39;s a link to my first project.
+Just for convenience here&#39;s a link to Google
+Using Python with R One of the neat things about markdown is that you can isolate code chunks and have them run perfectly fine right next to each other.
+For example, here I&#39;ll load in the classic iris dataset using R.
+library(reticulate) library(tidyverse) ## ── Attaching packages ────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.</description>
+    </item>
+    
+  </channel>
+</rss>

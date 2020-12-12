@@ -1,0 +1,70 @@
+---
+title: 'New Blog Post'
+author: Charles Yang
+date: '2020-12-01'
+slug: ''
+categories: []
+tags: []
+description: ''
+---
+
+Howdy y'all, this is my first blog post on my site. 
+
+Here's a [link](/project1/) to my first project.
+
+Just for convenience here's a link to [Google](https://www.google.com)
+
+## Using Python with R
+
+One of the neat things about markdown is that you can isolate code chunks and have them run perfectly fine right next to each other.
+
+For example, here I'll load in the classic iris dataset using R.
+
+```{R}
+library(reticulate)
+library(tidyverse)
+iris <- iris
+head(iris)
+```
+
+One of the coolest parts of this is that the R and python environments can talk to one another. For example, here we can use the imported iris dataset from above and use it in a python environment with ease.
+
+```{python}
+import pandas as pd
+import numpy as np
+r.iris.head()
+
+#We can also manipulate the dataset thanks to pandas
+print(np.mean(r.iris["Sepal.Length"]))
+
+#python lets us treat the dataframe like an array and index using indices
+r.iris.loc[0:5,"Sepal.Length":"Petal.Length"] 
+```
+
+While there are certainly cases to use one language over the other, it's not like the two languages can't do similar things. Take for example plotting:
+
+
+In R, ggplot can handle a lot of plotting needs.
+
+```{R}
+library(ggplot2)
+
+iris %>% ggplot(aes(x = Sepal.Length, y = Petal.Length)) + 
+  geom_point(color = "red", alpha = 0.5) + 
+  labs(title = "Example Plot", x = "Sepal Length", y = "Petal Length")
+
+```
+
+In python, matplotlib can do similar plots. Unfortunately I couldn't figure out why RStudio couldn't properly render the below python code but I promise that it can work on your computer if you copy the code.
+
+{python}
+import matplotlib.pyplot as plt
+plt.scatter(r.iris["Sepal.Length"], r.iris["Petal.Length"], color = "red", alpha = 0.5)
+plt.xlabel("Sepal Length")
+plt.ylabel("Petal Length")
+plt.title("Example Plot 2: Electric Boogaloo")
+
+
+At last, I leave you with this image. I hope it may haunt you as it haunts me.
+
+![](/post/2020-12-01-_files/bad meme.png)

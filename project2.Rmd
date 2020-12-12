@@ -1,0 +1,339 @@
+---
+title: 'Project 2: Modeling, Testing, and Predicting'
+author: "Charles Yang cmy455"
+date: ''
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE,fig.align="center",warning=FALSE,message=FALSE,fig.width=8, fig.height=5, linewidth=60)
+options(tibble.width = 100,width = 100)
+library(tidyverse)
+class_diag<-function(probs,truth){
+  
+  tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+  acc=sum(diag(tab))/sum(tab)
+  sens=tab[2,2]/colSums(tab)[2]
+  spec=tab[1,1]/colSums(tab)[1]
+  ppv=tab[2,2]/rowSums(tab)[2]
+  
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<-as.numeric(truth)-1
+  
+  #CALCULATE EXACT AUC
+  ord<-order(probs, decreasing=TRUE)
+  probs <- probs[ord]; truth <- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+  TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+  
+  n <- length(TPR)
+  auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+  
+  data.frame(acc,sens,spec,ppv,auc)
+}
+```
+
+## Data
+
+The dataset I will be using consists of observations collected on 2557 species of palm tree collected from all over the globe, but only 245 of these species have data for all parameters. The data includes details about each species, broken down into a few "groupings". These are the stems, leaves, and fruit. The stems are described as either erect, climbing, or acaulescent, and measurements of spine branching, height, and diameter are taken. The leaves are describe dusing the number of leaves and measurements of length and width. Finally, the fruits are described by their size in all dimensions and color.
+
+```{r}
+palmData <- read_csv("~/content/palmData.csv")
+data <- palmData %>% select(c(6:26, 29)) %>% na.omit %>% select(c(-UnderstoreyCanopy, -MinFruitLength_cm, -MaxFruitLength_cm, -MinFruitWidth_cm, -MaxFruitWidth_cm))
+head(data)
+```
+
+## MANOVA
+
+### MANOVA Test
+
+```{r}
+man <- manova(cbind(MaxStemHeight_m, MaxStemDia_cm, MaxLeafNumber, Max_Blade_Length_m, Max_Rachis_Length_m, Max_Petiole_length_m, AverageFruitLength_cm, AverageFruitWidth_cm)~Erect, data = data)
+
+summary(man)
+```
+We reject the null hypothesis and find that one of the numeric variables does differ across levels of stem erect status (p = 2.476e-5).
+
+### Univariate ANOVAs
+
+```{r}
+summary.aov(man)
+```
+The univariate ANOVA tests indicate that the average fruit width, max stem diameter, max petiole length, and max leaf number differ across levels of stem erect status.
+
+### Pairwise t-tests
+
+```{r}
+pairwise.t.test(data$MaxStemDia_cm, data$Erect, p.adj = "none")
+pairwise.t.test(data$AverageFruitWidth_cm, data$Erect, p.adj = "none")
+pairwise.t.test(data$Max_Petiole_length_m, data$Erect, p.adj = "none")
+pairwise.t.test(data$MaxLeafNumber, data$Erect, p.adj = "none")
+```
+So far, I have done 1 MANOVA, 8 univariate ANOVA's, and 12 t-tests. If I were to use p < 0.05 to evaluate significance, there is a 65.94% chance of making a type-I error. Using a bonferroni correction, I will instead be using p < 0.00238 for evaluating significance in the t-tests. 
+
+Thus the average of average fruit width for species with erect stems differs from that of species that can have either type of stem (p = 5.4e-8). In addition, the average of average fruit width for species without erect stems also differs from species that can have either type of stem (p = 2.6e-7). The last significant difference was for max leaf number between species that have erect stems and those that do not (p = 0.0015).
+
+### Assumption Testing
+
+```{r}
+library(rstatix)
+
+group <- data$Erect[data$Erect != 2]
+DVs <- data %>% filter(Erect != 2) %>% select(c(7:14))
+head(data)
+#Shapiro-Wilk test for multivariate normality
+sapply(split(DVs,group), mshapiro_test)
+
+
+#Box's M test (null: assumption met)
+box_m(DVs, group)
+```
+We reject the null hypothesis and find that the data do not exhibit multivariate normality (p < 0.05). We reject the null hypothesis and find that the covariance matrices are not homogenous (p < 0.05).
+
+### Randomization Test
+
+Here I test the difference in means of the Average Fruit Width based on if the species has an erect stem or not.
+```{r}
+random <- data.frame(Erect = data$Erect, AverageFruitWidth = data$AverageFruitWidth_cm) %>% filter(Erect == 0 | Erect == 1)
+
+true_mean <- random %>% group_by(Erect) %>% summarize_all(mean) %>% pull %>% diff #true mean differences
+true_mean
+set.seed(1)
+mean_diff <- NULL
+for(i in 1:5000){
+  samp <- data.frame(erect = sample(random$Erect), FruitWidth = random$AverageFruitWidth)
+  mean_diff[i] <- mean(samp[samp$erect == 1,]$FruitWidth) - mean(samp[samp$erect == 0,]$FruitWidth)
+}
+
+mean(mean_diff > 0.1590325 | mean_diff < -0.1590325) # p-value
+
+data.frame(diffs = mean_diff) %>% ggplot(aes(x = diffs)) + geom_histogram() + geom_vline(xintercept = c(true_mean, -true_mean), color = "red")
+```
+H0: The mean average fruit width does not differ between species with erect stems and species without erect stems.\
+H1: The mean average fruit width does differ between species with erect stems and species without erect stems.
+
+We fail to reject the null hypothesis and conclude that there is no difference in the mean average fruit width between species that have erect stems and those that do not (p = 0.7034).
+
+
+
+## Linear Regression Model
+
+Here I see if there is a correlation between leaf blade length and stem height with the volume of the fruit.
+```{r}
+data <- data %>% mutate(FruitVolume = 4 / 3 * pi * AverageFruitLength_cm * AverageFruitWidth_cm^2, MaxBladeLength_c = Max_Blade_Length_m - mean(Max_Blade_Length_m), MaxStemHeight_c = MaxStemHeight_m - mean(MaxStemHeight_m))
+
+lm <- lm(FruitVolume ~ MaxBladeLength_c * MaxStemHeight_c, data = data)
+summary(lm)
+```
+For palm species with average leaf blade length and stem height, the average volume of the fruit is 230.582 cm^3. For every one meter increase in leaf blade length, there is a predicted increase in fruit volume by 80.357 cm^3. For every one meter increase in stem height, there is a predicted increase in fruit volume by 14.097 cm^3.
+For every one meter increase in leaf blade length, the slope of stem height on fruit volume increases by 1.726 cm^3/m.
+
+### Linear Regression Plots
+```{r}
+library(interactions)
+interact_plot(lm, pred = MaxStemHeight_c, modx = MaxBladeLength_c, plot.points = TRUE)
+```
+
+### Assumption Testing
+```{r}
+#Linearity
+ggplot(data, aes(MaxStemHeight_c, FruitVolume)) + geom_point()
+ggplot(data, aes(MaxBladeLength_c, FruitVolume)) + geom_point()
+
+#homoskedasticity
+fitted <- lm$fitted.values
+resids <- lm$residuals
+ggplot() + geom_point(aes(fitted, resids)) + geom_hline(yintercept = 0, color = "red")
+
+#normality
+ggplot() + geom_qq(aes(sample = resids)) + geom_qq_line(aes(sample = resids))
+```
+Analyzing the graphs seems to indicate that the model violates all assumptions. The variables are not linearly correlated, the residual plot shows that larger fitted values have larger residuals than earlier fitted values. Finally, the tails of the qq-plot indicate a deviation from normality. In general, it seems that outliers are having a significant influence on the model. 
+
+
+### Test with Robust SE
+
+```{r}
+library(lmtest); library(sandwich)
+coeftest(lm, vcov = vcovHC(lm))
+summary(lm)$adj.r.squared
+```
+After using robust standard errors, the effect of leaf blade length is no longer significant. According to the adjusted R squared, the only 3.999% of the variation in fruit volume is explained by leaf length and stem height.
+
+### Bootstrap SE
+
+```{r}
+set.seed(1)
+samp_dist <- replicate(5000, {
+  boot_dat <- data %>% sample_frac(replace = T)
+  fit <- lm(FruitVolume ~ MaxBladeLength_c * MaxStemHeight_c, data = boot_dat)
+  coef(fit)
+})
+#bootstrap SE
+samp_dist %>% t %>% as.data.frame %>% summarize_all(sd)
+
+#95% CI of slope estimates
+samp_dist %>% t %>% as.data.frame %>% pivot_longer(1:4) %>% group_by(name) %>% summarize(lower = quantile(value, 0.025), upper = quantile(value, 0.975))
+```
+Compared to using robust SEs, the bootstrap SEs for the intercept and coefficient for leaf blade length are smaller, but the SEs for the other coefficients are higher. This pattern is the same for the original regression. Since the 95% confidence intervals for the coefficient estimates all include 0, we can conclude that they are indistinguishable from 0. Therefore the p-values are similar to when we used the robust SEs but not to the original model.
+
+## Logistic Regressions
+
+### Using 2 Predictors
+
+```{r}
+log_fit <- glm(LeavesArmed ~ Max_Blade_Length_m + Max_Petiole_length_m, data = data, family = "binomial")
+summary(log_fit)
+```
+For palm species with 0 meter long leaves and petioles (the stalk of the leaf), the log-odds of the leaves having spines is -2.06606. For every increase in leaf blade length by 1 meter, the log-odds of the leaves having spines decrease by 0.03583 For every 1 meter increase in the petiole length, the log-odds of the leaves having spines increases by 0.61265.
+
+#### Confusion Matrix and Related Values
+```{r}
+predicted <- predict(log_fit, type = "response")
+table(truth = data$LeavesArmed, pred = predicted > 0.5) %>% addmargins
+class_diag(predicted, data$LeavesArmed)
+```
+The model diagnostic values are as follows:\
+Accuracy: 0.823\
+Sensitivity: 0.023\
+Specificity: 0.990\
+Precision: 0.333\
+AUC: 0.668\
+From this we can tell that the model does a good job of predicting negatives, but struggles with predicting positives. The AUC indicates that a species with spined leaves has 66.835% chance of having a higher predicted probability than a randomly selected species without spined leaves.
+
+#### Density Plot
+```{r}
+logit <- predict(log_fit)
+density <- cbind(logit = logit, LeavesArmed = data$LeavesArmed) %>% as.data.frame %>%
+  mutate(LeavesArmed = ifelse(LeavesArmed == 1, "Spined", "No Spines"))
+
+ggplot(density, aes(logit, fill = LeavesArmed)) + geom_density(alpha = 0.3) +
+  geom_vline(xintercept = 0)
+```
+
+#### ROC Plot
+```{r}
+library(plotROC)
+roc_data <- cbind(LeavesArmed = data$LeavesArmed, probs = predict(log_fit, type = "response")) %>%
+  as.data.frame
+
+ROC <- ggplot(roc_data) + geom_roc(aes(d = LeavesArmed, m = probs), n.cuts = 0)
+ROC
+calc_auc(ROC)
+```
+The AUC indicates that a species with spined leaves has 68.021% chance of having a higher predicted probability than a randomly selected species without spined leaves.
+
+### Using all Predictors
+
+
+```{r}
+log_fit_all <- glm(LeavesArmed ~ ., data = data, family = "binomial")
+predict_all <- predict(log_fit_all, type = "response")
+class_diag(predict_all, data$LeavesArmed)
+```
+After fitting using all variables, the model diagnostics were as follows:\
+  Accuracy: 0.940\
+  Sensitivity: 0.721\
+  Specificity: 0.985\
+  Precision: 0.912\
+  AUC: 0.927\
+High values for accuracy, specificity, and precision indicate that the model is overall decent at predicting the true values, predicting negative values, and few predicted positives are false positives. The model does the worst in predicting negatives. Based on the AUC, there is a 92.660% chance that a species with spined leaves has a higher predicted probability of having spined leaves than a randomly selected species without spined leaves.
+
+#### 10-fold Cross-Validation
+```{r}
+set.seed(1)
+k = 10
+
+cv_data <- data[sample(nrow(data)),]
+folds <- cut(seq(1:nrow(data)), breaks = k, labels = F)
+
+diags <- NULL
+for (i in 1:k){
+  #make datasets
+  train <- cv_data[folds != i,]
+  test <- cv_data[folds == i,]
+  truth <- test$LeavesArmed
+  
+  #train
+  cv_fit <- glm(LeavesArmed ~ ., data = train, family = "binomial")
+  
+  #test on test set
+  prob <- predict(cv_fit, newdata = test, type = "response")
+  diags <- rbind(diags, class_diag(prob, truth))
+}
+summarize_all(diags, mean)
+```
+After using 10-fold cross validation, the average diagnostics were as follows:\
+  Accuracy: 0.907\
+  Sensitivity: 0.631\
+  Specificity: 0.966\
+  Precision: 0.817\
+  AUC: 0.850\
+The AUC indicates that 84.984% of species with spined leaves have a higher predicted probability of having spines than a randomly selected species without spined leaves. The AUC after cross-validation is lower than the in-sample AUC.
+
+#### LASSO
+```{r}
+library(glmnet)
+set.seed(1)
+
+pred_mat <- model.matrix(LeavesArmed ~ ., data = data)[,-1]
+resp_mat <- as.matrix(data$LeavesArmed)
+
+cv_lasso <- cv.glmnet(x = pred_mat, y = resp_mat, family = "binomial")
+lasso <- glmnet(x = pred_mat, y = resp_mat, family = "binomial", lambda = cv_lasso$lambda.1se)
+coef(lasso)
+```
+After using LASSO regression, only whether a species is climbing or not, whether the stem has spines, and the leaf number were retained.
+
+#### 10-fold CV with LASSO Variables
+```{r}
+set.seed(1)
+k = 10
+
+cv_data <- data[sample(nrow(data)),]
+folds <- cut(seq(1:nrow(data)), breaks = k, labels = F)
+
+diags <- NULL
+for (i in 1:k){
+  #make datasets
+  train <- cv_data[folds != i,]
+  test <- cv_data[folds == i,]
+  truth <- test$LeavesArmed
+  
+  #train
+  cv_fit <- glm(LeavesArmed ~ Climbing + StemArmed + MaxLeafNumber, data = train, family = "binomial")
+  
+  #test on test set
+  prob <- predict(cv_fit, newdata = test, type = "response")
+  diags <- rbind(diags, class_diag(prob, truth))
+}
+summarize_all(diags, mean)
+```
+After using 10-fold cross validation using variables selected by LASSO, the average diagnostics were as follows:\
+  Accuracy: 0.923\
+  Sensitivity: 0.647\
+  Specificity: 0.985\
+  Precision: 0.917\
+  AUC: 0.890\
+The AUC this time was higher than when doing a 10-fold cross-validation with all predictor variables, but is still lower than the in-sample AUC.

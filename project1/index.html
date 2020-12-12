@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Charles Yang" />
+    <meta name="description" content="Describe your website">
+    <link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico">
+    <title>Project 1</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../post/">BLOG</a></li>
+        
+        <li><a href="../projects/">PROJECTS</a></li>
+        
+        <li><a href="../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../project1/">Project 1</a></strong>
+          </h3>
+        </div>
+        
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The coronavirus pandemic has been one of the largest public health crises that the US has faced in recent history. However, the effects of it have not been equally spread out in the population. In order to investigate which groups are more affected, I will be using two datasets. One is from the US Census bureau and includes county population estimates for 2010-2019. These population estimates are further divided up by age, gender, and race/ethnicity. These estimates are calculated using birth, death, and migration numbers from each county and adding these numbers to the populations from the 2010 Census.The second dataset is a time series cumulative total number of confirmed coronavirus cases from January 22, 2020 to October 5, 2020 organized by USA Facts. The data is collected from county or state public health agencies. Being able to understand how demographics relate to infection rates could be informative about issues in how the US deals with public health. Previously released research indicates that certain groups, such as African-Americans and Hispanics, have higher infection rates than other groups. I would expect to see a similar pattern in the data. I don't expect there to be much of a relationship between gender and infection rate however.</p>
+<p>The USA Facts dataset includes county name and state name, with respective FIPS codes for each, as well as date entries from 1/22/20 to 10/5/20 with the cumulative confirmed case count as the value. The Census dataset similarly includes county and state names with corresponding FIPS codes. It also includes variables for year, which refers to the date the population estimates are for, age group, and the population estimates. The population estimates include total population, male and female population, and population estimates for all races and ethnicities considered by the Census Bureau in various combinations. These are also partially divided by marital status, whether someone is alone or is in a combination.</p>
+</div>
+<div id="tidying" class="section level2">
+<h2>Tidying</h2>
+<pre class="r"><code>library(tidyverse)
+library(openintro)
+county_case_cum &lt;- read_csv(&quot;~/content/countyData.csv&quot;)
+# county_case_cum &lt;- county_covid %&gt;% pivot_longer(-(1:4),
+# names_to = &#39;date&#39;, values_to = &#39;case_num&#39;) %&gt;%
+# rename(County.Name = `County Name`) %&gt;% unite(col =
+# &#39;county_state&#39;, c(County.Name, State), remove = F) %&gt;%
+# group_by(county_state) %&gt;% summarize(cum.case.num =
+# max(case_num, na.rm = T))
+glimpse(county_case_cum)</code></pre>
+<pre><code>## Rows: 3,195
+## Columns: 2
+## $ county_state &lt;chr&gt; &quot;Abbeville County_SC&quot;, &quot;Acadia Parish_LA&quot;, &quot;Accomack Cou…
+## $ cum.case.num &lt;dbl&gt; 640, 2993, 1188, 13672, 77, 336, 373, 656, 9900, 42, 29,…</code></pre>
+<pre class="r"><code>state_abbr &lt;- read_csv(&quot;~/content/stateEstimates.csv&quot;)
+# state_abbr &lt;- county_demo %&gt;% filter(YEAR == 12, AGEGRP ==
+# 0) %&gt;% select(-(1:3)) %&gt;% mutate(STNAME =
+# state2abbr(.[[1]])) %&gt;% unite(col = &#39;county_state&#39;,
+# c(CTYNAME, STNAME), remove = F)
+head(state_abbr)</code></pre>
+<pre><code>## # A tibble: 6 x 78
+##   county_state STNAME CTYNAME  YEAR AGEGRP TOT_POP TOT_MALE TOT_FEMALE WA_MALE
+##   &lt;chr&gt;        &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;      &lt;dbl&gt;   &lt;dbl&gt;
+## 1 Autauga Cou… AL     Autaug…    12      0   55869    27092      28777   20878
+## 2 Baldwin Cou… AL     Baldwi…    12      0  223234   108247     114987   94810
+## 3 Barbour Cou… AL     Barbou…    12      0   24686    13064      11622    6389
+## 4 Bibb County… AL     Bibb C…    12      0   22394    11929      10465    8766
+## 5 Blount Coun… AL     Blount…    12      0   57826    28472      29354   27258
+## 6 Bullock Cou… AL     Bulloc…    12      0   10101     5508       4593    1629
+## # … with 69 more variables: WA_FEMALE &lt;dbl&gt;, BA_MALE &lt;dbl&gt;, BA_FEMALE &lt;dbl&gt;,
+## #   IA_MALE &lt;dbl&gt;, IA_FEMALE &lt;dbl&gt;, AA_MALE &lt;dbl&gt;, AA_FEMALE &lt;dbl&gt;,
+## #   NA_MALE &lt;dbl&gt;, NA_FEMALE &lt;dbl&gt;, TOM_MALE &lt;dbl&gt;, TOM_FEMALE &lt;dbl&gt;,
+## #   WAC_MALE &lt;dbl&gt;, WAC_FEMALE &lt;dbl&gt;, BAC_MALE &lt;dbl&gt;, BAC_FEMALE &lt;dbl&gt;,
+## #   IAC_MALE &lt;dbl&gt;, IAC_FEMALE &lt;dbl&gt;, AAC_MALE &lt;dbl&gt;, AAC_FEMALE &lt;dbl&gt;,
+## #   NAC_MALE &lt;dbl&gt;, NAC_FEMALE &lt;dbl&gt;, NH_MALE &lt;dbl&gt;, NH_FEMALE &lt;dbl&gt;,
+## #   NHWA_MALE &lt;dbl&gt;, NHWA_FEMALE &lt;dbl&gt;, NHBA_MALE &lt;dbl&gt;, NHBA_FEMALE &lt;dbl&gt;,
+## #   NHIA_MALE &lt;dbl&gt;, NHIA_FEMALE &lt;dbl&gt;, NHAA_MALE &lt;dbl&gt;, NHAA_FEMALE &lt;dbl&gt;,
+## #   NHNA_MALE &lt;dbl&gt;, NHNA_FEMALE &lt;dbl&gt;, NHTOM_MALE &lt;dbl&gt;, NHTOM_FEMALE &lt;dbl&gt;,
+## #   NHWAC_MALE &lt;dbl&gt;, NHWAC_FEMALE &lt;dbl&gt;, NHBAC_MALE &lt;dbl&gt;, NHBAC_FEMALE &lt;dbl&gt;,
+## #   NHIAC_MALE &lt;dbl&gt;, NHIAC_FEMALE &lt;dbl&gt;, NHAAC_MALE &lt;dbl&gt;, NHAAC_FEMALE &lt;dbl&gt;,
+## #   NHNAC_MALE &lt;dbl&gt;, NHNAC_FEMALE &lt;dbl&gt;, H_MALE &lt;dbl&gt;, H_FEMALE &lt;dbl&gt;,
+## #   HWA_MALE &lt;dbl&gt;, HWA_FEMALE &lt;dbl&gt;, HBA_MALE &lt;dbl&gt;, HBA_FEMALE &lt;dbl&gt;,
+## #   HIA_MALE &lt;dbl&gt;, HIA_FEMALE &lt;dbl&gt;, HAA_MALE &lt;dbl&gt;, HAA_FEMALE &lt;dbl&gt;,
+## #   HNA_MALE &lt;dbl&gt;, HNA_FEMALE &lt;dbl&gt;, HTOM_MALE &lt;dbl&gt;, HTOM_FEMALE &lt;dbl&gt;,
+## #   HWAC_MALE &lt;dbl&gt;, HWAC_FEMALE &lt;dbl&gt;, HBAC_MALE &lt;dbl&gt;, HBAC_FEMALE &lt;dbl&gt;,
+## #   HIAC_MALE &lt;dbl&gt;, HIAC_FEMALE &lt;dbl&gt;, HAAC_MALE &lt;dbl&gt;, HAAC_FEMALE &lt;dbl&gt;,
+## #   HNAC_MALE &lt;dbl&gt;, HNAC_FEMALE &lt;dbl&gt;</code></pre>
+<p>The first dataset started with cumulative case counts per day in US counties. I used pivot_longer in order to compress the data into a date column and a cumulative case column. I also appended the abbreviations for the state onto each county entry because there are duplicate counties in different states. To collapse the data I grouped by county+state and selected the row with the highest case number as it is the most recent data. Only the county+state and cumulative case number data were preserved.</p>
+<p>The second dataset was a similar story. I only selected data where the year value was 12 and age group was 0 as this represented the total population estimates when the most recent estimate was generated. As with before, a variable for county+state names was created. The numeric identifiers were dropped. Since select was used the rest of the columns were preserved.</p>
+</div>
+<div id="joining" class="section level2">
+<h2>Joining</h2>
+<pre class="r"><code>joined_data &lt;- state_abbr %&gt;% inner_join(county_case_cum)
+# setdiff(union(county_case_cum$county_state,
+# state_abbr$county_state),
+# intersect(state_abbr$county_state,
+# county_case_cum$county_state)) %&gt;% length
+# setdiff(state_abbr$county_state,
+# county_case_cum$county_state)
+head(joined_data)</code></pre>
+<pre><code>## # A tibble: 6 x 79
+##   county_state STNAME CTYNAME  YEAR AGEGRP TOT_POP TOT_MALE TOT_FEMALE WA_MALE
+##   &lt;chr&gt;        &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;      &lt;dbl&gt;   &lt;dbl&gt;
+## 1 Autauga Cou… AL     Autaug…    12      0   55869    27092      28777   20878
+## 2 Baldwin Cou… AL     Baldwi…    12      0  223234   108247     114987   94810
+## 3 Barbour Cou… AL     Barbou…    12      0   24686    13064      11622    6389
+## 4 Bibb County… AL     Bibb C…    12      0   22394    11929      10465    8766
+## 5 Blount Coun… AL     Blount…    12      0   57826    28472      29354   27258
+## 6 Bullock Cou… AL     Bulloc…    12      0   10101     5508       4593    1629
+## # … with 70 more variables: WA_FEMALE &lt;dbl&gt;, BA_MALE &lt;dbl&gt;, BA_FEMALE &lt;dbl&gt;,
+## #   IA_MALE &lt;dbl&gt;, IA_FEMALE &lt;dbl&gt;, AA_MALE &lt;dbl&gt;, AA_FEMALE &lt;dbl&gt;,
+## #   NA_MALE &lt;dbl&gt;, NA_FEMALE &lt;dbl&gt;, TOM_MALE &lt;dbl&gt;, TOM_FEMALE &lt;dbl&gt;,
+## #   WAC_MALE &lt;dbl&gt;, WAC_FEMALE &lt;dbl&gt;, BAC_MALE &lt;dbl&gt;, BAC_FEMALE &lt;dbl&gt;,
+## #   IAC_MALE &lt;dbl&gt;, IAC_FEMALE &lt;dbl&gt;, AAC_MALE &lt;dbl&gt;, AAC_FEMALE &lt;dbl&gt;,
+## #   NAC_MALE &lt;dbl&gt;, NAC_FEMALE &lt;dbl&gt;, NH_MALE &lt;dbl&gt;, NH_FEMALE &lt;dbl&gt;,
+## #   NHWA_MALE &lt;dbl&gt;, NHWA_FEMALE &lt;dbl&gt;, NHBA_MALE &lt;dbl&gt;, NHBA_FEMALE &lt;dbl&gt;,
+## #   NHIA_MALE &lt;dbl&gt;, NHIA_FEMALE &lt;dbl&gt;, NHAA_MALE &lt;dbl&gt;, NHAA_FEMALE &lt;dbl&gt;,
+## #   NHNA_MALE &lt;dbl&gt;, NHNA_FEMALE &lt;dbl&gt;, NHTOM_MALE &lt;dbl&gt;, NHTOM_FEMALE &lt;dbl&gt;,
+## #   NHWAC_MALE &lt;dbl&gt;, NHWAC_FEMALE &lt;dbl&gt;, NHBAC_MALE &lt;dbl&gt;, NHBAC_FEMALE &lt;dbl&gt;,
+## #   NHIAC_MALE &lt;dbl&gt;, NHIAC_FEMALE &lt;dbl&gt;, NHAAC_MALE &lt;dbl&gt;, NHAAC_FEMALE &lt;dbl&gt;,
+## #   NHNAC_MALE &lt;dbl&gt;, NHNAC_FEMALE &lt;dbl&gt;, H_MALE &lt;dbl&gt;, H_FEMALE &lt;dbl&gt;,
+## #   HWA_MALE &lt;dbl&gt;, HWA_FEMALE &lt;dbl&gt;, HBA_MALE &lt;dbl&gt;, HBA_FEMALE &lt;dbl&gt;,
+## #   HIA_MALE &lt;dbl&gt;, HIA_FEMALE &lt;dbl&gt;, HAA_MALE &lt;dbl&gt;, HAA_FEMALE &lt;dbl&gt;,
+## #   HNA_MALE &lt;dbl&gt;, HNA_FEMALE &lt;dbl&gt;, HTOM_MALE &lt;dbl&gt;, HTOM_FEMALE &lt;dbl&gt;,
+## #   HWAC_MALE &lt;dbl&gt;, HWAC_FEMALE &lt;dbl&gt;, HBAC_MALE &lt;dbl&gt;, HBAC_FEMALE &lt;dbl&gt;,
+## #   HIAC_MALE &lt;dbl&gt;, HIAC_FEMALE &lt;dbl&gt;, HAAC_MALE &lt;dbl&gt;, HAAC_FEMALE &lt;dbl&gt;,
+## #   HNAC_MALE &lt;dbl&gt;, HNAC_FEMALE &lt;dbl&gt;, cum.case.num &lt;dbl&gt;</code></pre>
+<p>An inner join was used because both datasets included entries not found in the other. The cumulative case number dataset dropped cities, unallocated areas of each state, and a few counties. The census data lost mostly independent city entries, but also a few boroughs. One notable entry lost was Washington D.C. due to inconsistent naming of the &quot;county&quot; by the datasets. Almost half of the 105 dropped entries were from the aforementioned unallocated areas. All of the omissions are important, however, as this means that any conclusions drawn from this joined dataset may not be fully representative of the entire United States.</p>
+</div>
+<div id="wrangling" class="section level2">
+<h2>Wrangling</h2>
+<pre class="r"><code>county_data &lt;- joined_data %&gt;% select(CTYNAME, STNAME, cum.case.num, 
+    AGEGRP, matches(&quot;\\b.{1}AC_|\\bH_|\\bTOT_&quot;))
+prop_data &lt;- county_data %&gt;% mutate_at(vars(TOT_MALE:H_FEMALE), 
+    ~./TOT_POP)
+demo_final &lt;- prop_data %&gt;% mutate(white = WAC_FEMALE + WAC_MALE) %&gt;% 
+    mutate(african.american = BAC_FEMALE + BAC_MALE) %&gt;% mutate(native.american.alaskan = IAC_MALE + 
+    IAC_FEMALE) %&gt;% mutate(asian = AAC_FEMALE + AAC_MALE) %&gt;% 
+    mutate(hawaiian.pacific.islander = NAC_FEMALE + NAC_MALE) %&gt;% 
+    mutate(hispanic = H_MALE + H_FEMALE) %&gt;% select(!matches(&quot;_&quot;) | 
+    matches(&quot;\\bTOT&quot;), -AGEGRP) %&gt;% rename(tot.pop = TOT_POP, 
+    tot.male = TOT_MALE, tot.female = TOT_FEMALE) %&gt;% mutate(cases.per.capita = cum.case.num/tot.pop) %&gt;% 
+    na.omit
+head(demo_final)</code></pre>
+<pre><code>## # A tibble: 6 x 13
+##   CTYNAME STNAME cum.case.num white african.american native.american…   asian
+##   &lt;chr&gt;   &lt;chr&gt;         &lt;dbl&gt; &lt;dbl&gt;            &lt;dbl&gt;            &lt;dbl&gt;   &lt;dbl&gt;
+## 1 Autaug… AL             1831 0.780           0.211           0.0103  0.0170 
+## 2 Baldwi… AL             6085 0.892           0.0957          0.0161  0.0150 
+## 3 Barbou… AL              921 0.501           0.491           0.0120  0.00616
+## 4 Bibb C… AL              687 0.778           0.219           0.00924 0.00433
+## 5 Blount… AL             1662 0.971           0.0221          0.0142  0.00540
+## 6 Bulloc… AL              613 0.278           0.710           0.0138  0.00416
+## # … with 6 more variables: hawaiian.pacific.islander &lt;dbl&gt;, hispanic &lt;dbl&gt;,
+## #   tot.pop &lt;dbl&gt;, tot.male &lt;dbl&gt;, tot.female &lt;dbl&gt;, cases.per.capita &lt;dbl&gt;</code></pre>
+<p>In order to make the interpretations easier, I collapsed the race/ethnicity population estimates so that I had the total population of each race/ethnicity, regardless of marital status and gender. Then I converted all population values into proportions of the total county population so comparison would be possible. Case numbers were converted to cases per capita for ease of comparison.</p>
+<pre class="r"><code>demo_final %&gt;% summarize_if(is.numeric, c(mean = mean, sd = sd, 
+    min = min, max = max)) %&gt;% pivot_longer(cols = 1:44) %&gt;% 
+    separate(name, sep = &quot;_&quot;, into = c(&quot;variable&quot;, &quot;summary.stat&quot;)) %&gt;% 
+    pivot_wider(names_from = summary.stat, values_from = value) %&gt;% 
+    arrange(min)</code></pre>
+<pre><code>## # A tibble: 11 x 5
+##    variable                          mean          sd      min          max
+##    &lt;chr&gt;                            &lt;dbl&gt;       &lt;dbl&gt;    &lt;dbl&gt;        &lt;dbl&gt;
+##  1 cum.case.num                2325.        9346.      0         274942    
+##  2 asian                          0.0202       0.0352  0              0.618
+##  3 hawaiian.pacific.islander      0.00264      0.0142  0              0.523
+##  4 cases.per.capita               0.0203       0.0148  0              0.161
+##  5 african.american               0.101        0.145   0.00261        0.872
+##  6 native.american.alaskan        0.0334       0.0838  0.00301        0.944
+##  7 hispanic                       0.0976       0.139   0.00648        0.964
+##  8 white                          0.865        0.160   0.0595         0.996
+##  9 tot.female                     0.499        0.0227  0.265          0.570
+## 10 tot.male                       0.501        0.0227  0.430          0.735
+## 11 tot.pop                   103779.      334222.     86       10039107</code></pre>
+<p>Based on the standard deviations, it appears that there is significant variance in the populations of counties. For example, the mean proportion of African Americans in a population is 0.101, and the standard deviation is 0.145. This can also be seen in the total population data.The mean population of a county was 103,779.2 people, with a standard deviation of 334,221.9 people. This suggests that there are numerous counties at extremes of populations. This can be seen from the minimum and maximum values for the population, which range from 86 to 10,039,110</p>
+<pre class="r"><code>categ_tables &lt;- demo_final %&gt;% group_by(STNAME) %&gt;% summarize_if(is.numeric, 
+    c(mean = mean, sd = sd, min = min, max = max)) %&gt;% pivot_longer(2:45) %&gt;% 
+    separate(name, into = c(&quot;variable&quot;, &quot;stat&quot;), sep = &quot;_&quot;) %&gt;% 
+    pivot_wider(names_from = stat, values_from = value) %&gt;% arrange(variable, 
+    -max)
+
+categ_tables %&gt;% filter(STNAME == &quot;HI&quot;)</code></pre>
+<pre><code>## # A tibble: 11 x 6
+##    STNAME variable                          mean           sd     min        max
+##    &lt;chr&gt;  &lt;chr&gt;                            &lt;dbl&gt;        &lt;dbl&gt;   &lt;dbl&gt;      &lt;dbl&gt;
+##  1 HI     african.american               0.0349       0.0219   0.0181    6.98e-2
+##  2 HI     asian                          0.437        0.190    0.116     6.18e-1
+##  3 HI     cases.per.capita               0.00382      0.00475  0         1.18e-2
+##  4 HI     cum.case.num                2564         5032.       0         1.15e+4
+##  5 HI     hawaiian.pacific.islander      0.335        0.112    0.251     5.23e-1
+##  6 HI     hispanic                       0.0940       0.0472   0.0116    1.29e-1
+##  7 HI     native.american.alaskan        0.0320       0.0101   0.0220    4.81e-2
+##  8 HI     tot.female                     0.507        0.00955  0.498     5.23e-1
+##  9 HI     tot.male                       0.493        0.00955  0.477     5.02e-1
+## 10 HI     tot.pop                   283174.      394556.      86         9.75e+5
+## 11 HI     white                          0.481        0.0807   0.386     5.72e-1</code></pre>
+<pre class="r"><code>categ_tables %&gt;% filter(STNAME == &quot;CA&quot;)</code></pre>
+<pre><code>## # A tibble: 11 x 6
+##    STNAME variable                       mean           sd       min         max
+##    &lt;chr&gt;  &lt;chr&gt;                         &lt;dbl&gt;        &lt;dbl&gt;     &lt;dbl&gt;       &lt;dbl&gt;
+##  1 CA     african.american            0.0472       3.49e-2   1.25e-2     1.77e-1
+##  2 CA     asian                       0.0972       9.69e-2   1.63e-2     4.19e-1
+##  3 CA     cases.per.capita            0.0169       1.27e-2   1.77e-3     6.66e-2
+##  4 CA     cum.case.num            14417.           3.78e+4   2.00e+0     2.75e+5
+##  5 CA     hawaiian.pacific.isla…      0.00801      4.23e-3   2.66e-3     2.20e-2
+##  6 CA     hispanic                    0.312        1.83e-1   7.38e-2     8.50e-1
+##  7 CA     native.american.alask…      0.0488       3.98e-2   1.65e-2     2.75e-1
+##  8 CA     tot.female                  0.495        2.13e-2   3.78e-1     5.18e-1
+##  9 CA     tot.male                    0.505        2.13e-2   4.82e-1     6.22e-1
+## 10 CA     tot.pop                681245.           1.47e+6   1.13e+3     1.00e+7
+## 11 CA     white                       0.843        1.04e-1   5.38e-1     9.61e-1</code></pre>
+<p>Here I computed similar statistics as earlier but this time grouped by the state. I chose to show Hawaii and California since they had the lowest population county and highest population county respectively. California had higher average cases per capita than Hawaii but also had more variance in the data. California on average has more men than women, while Hawaii is the opposite. California on average has higher proportions of African Americans, Native Americans/Alaskans, and Whites than Hawaii, while Hawaii has greater proportions on average of other races/ethnicities.</p>
+<pre class="r"><code>demo_add_gender &lt;- demo_final %&gt;% mutate(major.gender = case_when(tot.male &gt; 
+    tot.female ~ &quot;male&quot;, tot.female &gt; tot.male ~ &quot;female&quot;, TRUE ~ 
+    &quot;equal&quot;))
+demo_add_gender %&gt;% group_by(STNAME, major.gender) %&gt;% summarize_at(vars(cases.per.capita), 
+    c(mean.cases = mean, sd.cases = sd, var.cases = var)) %&gt;% 
+    arrange(desc(major.gender), -mean.cases) %&gt;% head</code></pre>
+<pre><code>## # A tibble: 6 x 5
+## # Groups:   STNAME [6]
+##   STNAME major.gender mean.cases sd.cases var.cases
+##   &lt;chr&gt;  &lt;chr&gt;             &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+## 1 TN     male             0.0577   0.0451  0.00204 
+## 2 AR     male             0.0549   0.0460  0.00212 
+## 3 FL     male             0.0500   0.0225  0.000506
+## 4 LA     male             0.0431   0.0190  0.000360
+## 5 MS     male             0.0411   0.0166  0.000275
+## 6 AL     male             0.0406   0.0157  0.000246</code></pre>
+<p>In the counties that were majority male, the highest values for cases per capita were roughly 0.05. In contrast, counties that were majority female had maximum cases per capita of only around 0.036. However, there was more variance in the majority male counties at the top compared to the majority female counties at the top.</p>
+<pre class="r"><code>cor.table &lt;- demo_final %&gt;% select(is.numeric) %&gt;% cor
+knitr::kable(cor.table)</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="13%" />
+<col width="6%" />
+<col width="5%" />
+<col width="8%" />
+<col width="12%" />
+<col width="5%" />
+<col width="13%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="8%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">cum.case.num</th>
+<th align="right">white</th>
+<th align="right">african.american</th>
+<th align="right">native.american.alaskan</th>
+<th align="right">asian</th>
+<th align="right">hawaiian.pacific.islander</th>
+<th align="right">hispanic</th>
+<th align="right">tot.pop</th>
+<th align="right">tot.male</th>
+<th align="right">tot.female</th>
+<th align="right">cases.per.capita</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">cum.case.num</td>
+<td align="right">1.0000000</td>
+<td align="right">-0.1500771</td>
+<td align="right">0.1141509</td>
+<td align="right">-0.0349640</td>
+<td align="right">0.3261787</td>
+<td align="right">0.0250208</td>
+<td align="right">0.2245863</td>
+<td align="right">0.9464228</td>
+<td align="right">-0.1003792</td>
+<td align="right">0.1003792</td>
+<td align="right">0.1266862</td>
+</tr>
+<tr class="even">
+<td align="left">white</td>
+<td align="right">-0.1500771</td>
+<td align="right">1.0000000</td>
+<td align="right">-0.8496898</td>
+<td align="right">-0.3741655</td>
+<td align="right">-0.2212191</td>
+<td align="right">-0.1108639</td>
+<td align="right">0.0451040</td>
+<td align="right">-0.1440926</td>
+<td align="right">0.0879323</td>
+<td align="right">-0.0879323</td>
+<td align="right">-0.4301037</td>
+</tr>
+<tr class="odd">
+<td align="left">african.american</td>
+<td align="right">0.1141509</td>
+<td align="right">-0.8496898</td>
+<td align="right">1.0000000</td>
+<td align="right">-0.1239555</td>
+<td align="right">0.0244941</td>
+<td align="right">-0.0215706</td>
+<td align="right">-0.0888656</td>
+<td align="right">0.0909068</td>
+<td align="right">-0.1427354</td>
+<td align="right">0.1427354</td>
+<td align="right">0.4601878</td>
+</tr>
+<tr class="even">
+<td align="left">native.american.alaskan</td>
+<td align="right">-0.0349640</td>
+<td align="right">-0.3741655</td>
+<td align="right">-0.1239555</td>
+<td align="right">1.0000000</td>
+<td align="right">0.0056345</td>
+<td align="right">0.0237476</td>
+<td align="right">0.0062533</td>
+<td align="right">-0.0456147</td>
+<td align="right">0.0810045</td>
+<td align="right">-0.0810045</td>
+<td align="right">0.0199358</td>
+</tr>
+<tr class="odd">
+<td align="left">asian</td>
+<td align="right">0.3261787</td>
+<td align="right">-0.2212191</td>
+<td align="right">0.0244941</td>
+<td align="right">0.0056345</td>
+<td align="right">1.0000000</td>
+<td align="right">0.4653644</td>
+<td align="right">0.1562668</td>
+<td align="right">0.4387510</td>
+<td align="right">-0.0026974</td>
+<td align="right">0.0026974</td>
+<td align="right">-0.0295012</td>
+</tr>
+<tr class="even">
+<td align="left">hawaiian.pacific.islander</td>
+<td align="right">0.0250208</td>
+<td align="right">-0.1108639</td>
+<td align="right">-0.0215706</td>
+<td align="right">0.0237476</td>
+<td align="right">0.4653644</td>
+<td align="right">1.0000000</td>
+<td align="right">0.0349823</td>
+<td align="right">0.0496279</td>
+<td align="right">0.0011657</td>
+<td align="right">-0.0011657</td>
+<td align="right">-0.0372161</td>
+</tr>
+<tr class="odd">
+<td align="left">hispanic</td>
+<td align="right">0.2245863</td>
+<td align="right">0.0451040</td>
+<td align="right">-0.0888656</td>
+<td align="right">0.0062533</td>
+<td align="right">0.1562668</td>
+<td align="right">0.0349823</td>
+<td align="right">1.0000000</td>
+<td align="right">0.1970254</td>
+<td align="right">0.1483147</td>
+<td align="right">-0.1483147</td>
+<td align="right">0.1930018</td>
+</tr>
+<tr class="even">
+<td align="left">tot.pop</td>
+<td align="right">0.9464228</td>
+<td align="right">-0.1440926</td>
+<td align="right">0.0909068</td>
+<td align="right">-0.0456147</td>
+<td align="right">0.4387510</td>
+<td align="right">0.0496279</td>
+<td align="right">0.1970254</td>
+<td align="right">1.0000000</td>
+<td align="right">-0.1186141</td>
+<td align="right">0.1186141</td>
+<td align="right">0.0446529</td>
+</tr>
+<tr class="odd">
+<td align="left">tot.male</td>
+<td align="right">-0.1003792</td>
+<td align="right">0.0879323</td>
+<td align="right">-0.1427354</td>
+<td align="right">0.0810045</td>
+<td align="right">-0.0026974</td>
+<td align="right">0.0011657</td>
+<td align="right">0.1483147</td>
+<td align="right">-0.1186141</td>
+<td align="right">1.0000000</td>
+<td align="right">-1.0000000</td>
+<td align="right">0.0743947</td>
+</tr>
+<tr class="even">
+<td align="left">tot.female</td>
+<td align="right">0.1003792</td>
+<td align="right">-0.0879323</td>
+<td align="right">0.1427354</td>
+<td align="right">-0.0810045</td>
+<td align="right">0.0026974</td>
+<td align="right">-0.0011657</td>
+<td align="right">-0.1483147</td>
+<td align="right">0.1186141</td>
+<td align="right">-1.0000000</td>
+<td align="right">1.0000000</td>
+<td align="right">-0.0743947</td>
+</tr>
+<tr class="odd">
+<td align="left">cases.per.capita</td>
+<td align="right">0.1266862</td>
+<td align="right">-0.4301037</td>
+<td align="right">0.4601878</td>
+<td align="right">0.0199358</td>
+<td align="right">-0.0295012</td>
+<td align="right">-0.0372161</td>
+<td align="right">0.1930018</td>
+<td align="right">0.0446529</td>
+<td align="right">0.0743947</td>
+<td align="right">-0.0743947</td>
+<td align="right">1.0000000</td>
+</tr>
+</tbody>
+</table>
+<p>The correlation matrix indicates that there is a unsurprisingly a relatively strong correlation between total population and cumulative case numbers, which makes sense since more people means more chances of transmitting the virus. In addition, there was a strong negative correlation between proportion white and proportion African American. There was a weak positive correlation between the proportion of the population that was African American and the cases per capita and between the proportion of the population that is Asian with the proportion of the population that is Hawaiian/Pacific Islander. There is also a weak negative correlation between the proportion of the population that is white and the cases per capita. There was little correlation between other variables.</p>
+</div>
+<div id="plotting" class="section level2">
+<h2>Plotting</h2>
+<pre class="r"><code>cor.df &lt;- cor.table %&gt;% as.data.frame %&gt;% rownames_to_column(&quot;var1&quot;) %&gt;% 
+    pivot_longer(-1, names_to = &quot;var2&quot;, values_to = &quot;cor&quot;)
+cor.df %&gt;% ggplot(aes(x = var1, y = var2, fill = cor)) + geom_tile() + 
+    scale_fill_gradient2(low = &quot;red&quot;, mid = &quot;orange&quot;, high = &quot;yellow&quot;, 
+        midpoint = 0) + geom_text(aes(label = round(cor, 2)), 
+    color = &quot;black&quot;, size = 2) + theme(axis.text.x = element_text(angle = 90, 
+    hjust = 1, vjust = 0.4)) + coord_fixed()</code></pre>
+<p><img src="../project1_files/figure-html/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>demo_add_gender %&gt;% ggplot(aes(y = cases.per.capita, x = african.american)) + 
+    geom_point(aes(color = major.gender)) + labs(y = &quot;Cases per Capita&quot;, 
+    x = &quot;African American Proportion of Population&quot;) + ggtitle(&quot;Cases per Capita in US Counties vs. African American Proportion of Population&quot;) + 
+    scale_x_continuous(breaks = seq(0, 1, 0.1))</code></pre>
+<p><img src="../project1_files/figure-html/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>There appears to be a weak positive correlation between the proportion of the county's population that is African American and the cases per capita in the county for counties that were majority female. For counties that were majority male, there appeared to be a few extreme cases with lower African American proportions with high cases per capita. It should also be noted tha the majority of the data points are found with African American proportions of the population less than 0.2.</p>
+<pre class="r"><code>demo_add_gender %&gt;% ggplot(aes(x = major.gender, y = cases.per.capita)) + 
+    geom_bar(stat = &quot;summary&quot;, fun = mean, fill = &quot;pink&quot;) + geom_errorbar(stat = &quot;summary&quot;, 
+    fun.data = mean_se, width = 0.5) + labs(x = &quot;Majority Gender in County&quot;, 
+    y = &quot;Cases per Capita&quot;) + ggtitle(&quot;Cases per Capita vs. Majority Gender of County&quot;)</code></pre>
+<p><img src="../project1_files/figure-html/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>It does not appear that there is a significant difference in cases per capita between counties that were majority female and majority male. The majority female counties had slightly less variation in their cases per capita than their male counterparts but this did not alter the conclusions.</p>
+</div>
+<div id="dimensionality-reduction" class="section level2">
+<h2>Dimensionality Reduction</h2>
+<pre class="r"><code>library(cluster)
+head(demo_final)</code></pre>
+<pre><code>## # A tibble: 6 x 13
+##   CTYNAME STNAME cum.case.num white african.american native.american…   asian
+##   &lt;chr&gt;   &lt;chr&gt;         &lt;dbl&gt; &lt;dbl&gt;            &lt;dbl&gt;            &lt;dbl&gt;   &lt;dbl&gt;
+## 1 Autaug… AL             1831 0.780           0.211           0.0103  0.0170 
+## 2 Baldwi… AL             6085 0.892           0.0957          0.0161  0.0150 
+## 3 Barbou… AL              921 0.501           0.491           0.0120  0.00616
+## 4 Bibb C… AL              687 0.778           0.219           0.00924 0.00433
+## 5 Blount… AL             1662 0.971           0.0221          0.0142  0.00540
+## 6 Bulloc… AL              613 0.278           0.710           0.0138  0.00416
+## # … with 6 more variables: hawaiian.pacific.islander &lt;dbl&gt;, hispanic &lt;dbl&gt;,
+## #   tot.pop &lt;dbl&gt;, tot.male &lt;dbl&gt;, tot.female &lt;dbl&gt;, cases.per.capita &lt;dbl&gt;</code></pre>
+<pre class="r"><code>pam_cluster &lt;- demo_final %&gt;% select(is.numeric) %&gt;% select(c(-cum.case.num, 
+    -tot.pop)) %&gt;% scale
+head(pam_cluster)</code></pre>
+<pre><code>##           white african.american native.american.alaskan       asian
+## [1,] -0.5332550        0.7570509              -0.2760787 -0.09133989
+## [2,]  0.1674768       -0.0394594              -0.2063196 -0.14799264
+## [3,] -2.2714411        2.6913983              -0.2553328 -0.39968157
+## [4,] -0.5447985        0.8137098              -0.2885844 -0.45158442
+## [5,]  0.6635506       -0.5479959              -0.2296941 -0.42133850
+## [6,] -3.6689607        4.2053355              -0.2346976 -0.45651690
+##      hawaiian.pacific.islander    hispanic   tot.male tot.female
+## [1,]               -0.05524552 -0.48808104 -0.7216265  0.7216265
+## [2,]               -0.07060649 -0.36350066 -0.7223482  0.7223482
+## [3,]               -0.01219332 -0.37748680  1.2334993 -1.2334993
+## [4,]               -0.06056435 -0.50314484  1.3871523 -1.3871523
+## [5,]               -0.06824521 -0.00774032 -0.3925731  0.3925731
+## [6,]                0.40763409 -0.08701314  1.9436344 -1.9436344
+##      cases.per.capita
+## [1,]        0.8433464
+## [2,]        0.4712971
+## [3,]        1.1493340
+## [4,]        0.7019914
+## [5,]        0.5713479
+## [6,]        2.7265622</code></pre>
+<pre class="r"><code>sw &lt;- vector()
+for (i in 2:10) {
+    pam_fit &lt;- pam(pam_cluster, k = i)
+    sw[i] &lt;- pam_fit$silinfo$avg.width
+}
+ggplot() + geom_line(aes(x = 1:10, y = sw)) + scale_x_continuous(name = &quot;k&quot;, 
+    breaks = 1:10)</code></pre>
+<p><img src="../project1_files/figure-html/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>pam_k2 &lt;- pam(pam_cluster, k = 3)
+head(pam_cluster)</code></pre>
+<pre><code>##           white african.american native.american.alaskan       asian
+## [1,] -0.5332550        0.7570509              -0.2760787 -0.09133989
+## [2,]  0.1674768       -0.0394594              -0.2063196 -0.14799264
+## [3,] -2.2714411        2.6913983              -0.2553328 -0.39968157
+## [4,] -0.5447985        0.8137098              -0.2885844 -0.45158442
+## [5,]  0.6635506       -0.5479959              -0.2296941 -0.42133850
+## [6,] -3.6689607        4.2053355              -0.2346976 -0.45651690
+##      hawaiian.pacific.islander    hispanic   tot.male tot.female
+## [1,]               -0.05524552 -0.48808104 -0.7216265  0.7216265
+## [2,]               -0.07060649 -0.36350066 -0.7223482  0.7223482
+## [3,]               -0.01219332 -0.37748680  1.2334993 -1.2334993
+## [4,]               -0.06056435 -0.50314484  1.3871523 -1.3871523
+## [5,]               -0.06824521 -0.00774032 -0.3925731  0.3925731
+## [6,]                0.40763409 -0.08701314  1.9436344 -1.9436344
+##      cases.per.capita
+## [1,]        0.8433464
+## [2,]        0.4712971
+## [3,]        1.1493340
+## [4,]        0.7019914
+## [5,]        0.5713479
+## [6,]        2.7265622</code></pre>
+<pre class="r"><code>cluster_final &lt;- demo_final %&gt;% mutate(cluster = as.factor(pam_k2$clustering))
+library(GGally)
+ggpairs(cluster_final, columns = c(3:4, 9, 11, 13), aes(color = cluster))</code></pre>
+<p><img src="../project1_files/figure-html/unnamed-chunk-12-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(pam_k2, which = 2)</code></pre>
+<p><img src="../project1_files/figure-html/unnamed-chunk-12-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Based on the average silhouette width, I used 3 clusters for PAM and used all numeric variables I had transformed into proportions earlier. The average silhouette width was really low, however, at only 0.36. This suggests that there is a weak structure in the clustering that could be artificial. This becomes a little more obvious when one looks at the pairwise plots with the clusters colored in. None of the variables I chose to visualize were able to separate out the clusters. These variables were the ones that I found in the correlation heatmap to potentially show differences between the counties and I didn't use all numeric variables as that would have made the graph unreadable.</p>
+</div>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../js/docs.min.js"></script>
+<script src="../js/main.js"></script>
+
+<script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>
